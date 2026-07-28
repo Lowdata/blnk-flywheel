@@ -151,7 +151,28 @@ blnk-flywheel/
 ---
 
 # Outstanding Issues
-- None. Phase 6 complete.
+- Security and launch-readiness audit findings are tracked separately from this source-of-truth document. The highest-priority remediation items are removal of hard-coded secrets and server-side social-task verification.
+
+---
+
+# Phase 7 Changes (latest)
+
+## Capsule Reveal
+- `Scene.tsx`: The claw release sequence now signals completion from its final animation callback rather than relying on a page-level timeout. This keeps the reveal in lockstep with the actual delivery animation.
+- `Scene.tsx`: Reveal uses a dedicated presentation capsule, separate from the Rapier-scaled prize pile. Its model normalization, 38%-of-height local lid lift, quarter-sine easing, mechanical tilt, crystal, point light, and 35-particle sparkle system match `../test/script.js`.
+- The presentation capsule's centering and scale are applied through a parent normalization group, ensuring the raw GLB-space offset is scaled and remains in camera view. Its unique material clones render as a foreground reveal without changing occlusion for the physics capsule pile.
+- Reveal capsule diameter is `0.42` world units (rather than the standalone test demo's `2.6`) because the game camera is substantially closer; this keeps the complete capsule visible instead of placing the viewer inside it.
+- At initialization, the reveal lid is aligned from the GLB half-mesh bounds with a tiny overlap. This removes any authoring-space gap in the ready/closed state while retaining the same procedural opening lift.
+- Capsule halves now replace the source GLB's textured/transparent materials entirely: every pile and reveal capsule has an opaque black lid and opaque white base. The win-only crystal has foreground render priority so it is clearly visible after the lid opens.
+- `app/game/page.tsx`: After the capsule arrives and centers, the player clicks it to open; the outcome modal appears once the test-style lid animation reaches its reveal point.
+- Loss pulls retain the actual captured capsule for the reveal, instead of falling back to an unrelated first capsule.
+
+## Coin Visual
+- `app/game/page.tsx`: The coin-spend animation is a gold disk with a visibly offset lower rim for thickness. It now tosses from the player-facing lower edge into the machine's front silver section while the play request is processed.
+
+## Verification
+- `npx tsc --noEmit`: passes.
+- `npm run build`: passes.
 
 ---
 
@@ -161,5 +182,3 @@ blnk-flywheel/
 - [x] Phase 3: Architect seamless single-canvas prize reveal in Scene.tsx / Ball.tsx.
 - [x] Phase 4 & 5: Definition of Done verification.
 - [x] Phase 6: Ball opening animation (quarter-sine + bounding-box lift), UI overhaul (play-button flow, 3D controls, monochrome, home button), security (crypto RNG, rate limit, headers).
-
-

@@ -18,7 +18,25 @@ interface IStateMap {
     [key: string]: IState;
 }
 
+interface PresentationCapsule {
+    group: THREE.Group;
+    top: THREE.Object3D | null;
+    topClosedY: number;
+    topClosedRotX: number;
+    topClosedRotZ: number;
+    liftDistance: number;
+    rewardGroup: THREE.Group;
+    crystal: THREE.Mesh;
+    rewardLight: THREE.PointLight;
+    sparkles: THREE.Points;
+    sparkleMaterial: THREE.PointsMaterial;
+}
+
 const stateMap: IStateMap = {};
+
+// The standalone test scene views its capsule from ~6 units away. BLNK's game
+// camera is much closer, so a 2.6-unit test capsule puts the camera inside it.
+const REVEAL_CAPSULE_DIAMETER = 0.42;
 
 const Scene: ForwardRefRenderFunction<
     any,
@@ -39,7 +57,154 @@ const Scene: ForwardRefRenderFunction<
     const claw2 = useGLTF("/claw2.glb");
     const claw3 = useGLTF("/claw3.glb");
     const prizeCapsule = useGLTF("/assets/pre.glb");
-    const colors = useMemo(() => ['#3182CE', '#38A169', '#D69E2E', '#E53E3E', '#D53F8C'], []);
+
+    // This is intentionally separate from the Rapier prize pile.  It mirrors the
+    // proven /test capsule setup in its own local coordinate space, so physics
+    // scaling cannot suppress the lid movement during the reveal.
+    const presentationCapsule = useMemo<PresentationCapsule>(() => {
+        const group = new THREE.Group();
+        const model = prizeCapsule.scene.clone(true);
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxDimension = Math.max(size.x, size.y, size.z);
+
+        // Keep centering and scaling on a parent group.  Applying the scale to
+        // `model` itself leaves its large GLB-space position offset unscaled,
+        // which was placing the reveal capsule outside the camera view.
+        const normalizedModel = new THREE.Group();
+        model.position.sub(center);
+        normalizedModel.scale.setScalar(maxDimension > 0 ? REVEAL_CAPSULE_DIAMETER / maxDimension : 1);
+        normalizedModel.add(model);
+
+        let top = model.getObjectByName('top') as THREE.Object3D | undefined;
+        let bottom = model.getObjectByName('bottom') as THREE.Object3D | undefined;
+        if (!top || !bottom) {
+            console.warn('[Scene] Could not find exact "top" and "bottom" names. Attempting automatic mesh separation...');
+            const meshes: THREE.Object3D[] = [];
+            model.traverse((child) => {
+                if ((child as THREE.Mesh).isMesh) meshes.push(child);
+            });
+            if (meshes.length >= 2) {
+                bottom = meshes[0];
+                top = meshes[1];
+            } else {
+                console.error('[Scene] CRITICAL: pre.glb must contain distinct meshes for "top" and "bottom"');
+            }
+        }
+
+        // Some exports retain an authoring-space gap between the two meshes.
+        // Snap the lid to the base before recording its closed transform so the
+        // ready state is closed and only the click animation opens it.
+        if (top && bottom) {
+            model.updateMatrixWorld(true);
+            const topBounds = new THREE.Box3().setFromObject(top);
+            const bottomBounds = new THREE.Box3().setFromObject(bottom);
+            const rawGap = topBounds.min.y - bottomBounds.max.y;
+            const seamOverlap = size.y * 0.008;
+            top.position.y -= rawGap + seamOverlap;
+            model.updateMatrixWorld(true);
+        }
+
+        // The presentation capsule should be read clearly over the machine;
+        // unlike physics prizes, it is deliberately a foreground reveal object.
+        model.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+                const mesh = child as THREE.Mesh;
+                mesh.renderOrder = 100;
+                // GLTF clones share materials by default; isolate reveal-only
+                // depth settings so the physics pile keeps normal occlusion.
+                mesh.material = Array.isArray(mesh.material)
+                    ? mesh.material.map((material) => material.clone())
+                    : mesh.material.clone();
+                const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                materials.forEach((material) => {
+                    material.depthTest = true;
+                    material.depthWrite = true;
+                    material.transparent = false;
+                    material.opacity = 1;
+                    material.needsUpdate = true;
+                });
+            }
+        });
+
+        const setPresentationHalfColor = (object: THREE.Object3D | null | undefined, color: string) => {
+            object?.traverse((child) => {
+                if (!(child as THREE.Mesh).isMesh) return;
+                const mesh = child as THREE.Mesh;
+                // Replace source GLB materials to remove their transparency,
+                // texture colour, and alpha-map behaviour completely.
+                mesh.material = new THREE.MeshStandardMaterial({
+                    color,
+                    emissive: '#000000',
+                    metalness: 0.25,
+                    roughness: 0.32,
+                    transparent: false,
+                    opacity: 1,
+                    depthTest: true,
+                    depthWrite: true,
+                });
+            });
+        };
+        setPresentationHalfColor(top, '#111111');
+        setPresentationHalfColor(bottom, '#F0F0F0');
+        group.add(normalizedModel);
+        group.visible = false;
+
+        const rewardGroup = new THREE.Group();
+        rewardGroup.position.y = -0.3;
+        const crystal = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.2, 0.2, 0.04, 32),
+            new THREE.MeshStandardMaterial({
+                color: 0xffd700,
+                metalness: 0.9,
+                roughness: 0.1,
+                emissive: 0xf59e0b,
+                emissiveIntensity: 0.5,
+            })
+        );
+        crystal.castShadow = true;
+        crystal.renderOrder = 120;
+        (crystal.material as THREE.MeshStandardMaterial).depthTest = true;
+        (crystal.material as THREE.MeshStandardMaterial).depthWrite = true;
+        rewardGroup.add(crystal);
+
+        const rewardLight = new THREE.PointLight(0xf59e0b, 0, 4);
+        rewardGroup.add(rewardLight);
+
+        const sparkleCount = 35;
+        const sparklePositions = new Float32Array(sparkleCount * 3);
+        for (let index = 0; index < sparklePositions.length; index += 3) {
+            sparklePositions[index] = (Math.random() - 0.5) * 0.8;
+            sparklePositions[index + 1] = (Math.random() - 0.5) * 0.8;
+            sparklePositions[index + 2] = (Math.random() - 0.5) * 0.8;
+        }
+        const sparkleGeometry = new THREE.BufferGeometry();
+        sparkleGeometry.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3));
+        const sparkleMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.03,
+            transparent: true,
+            opacity: 0,
+        });
+        const sparkles = new THREE.Points(sparkleGeometry, sparkleMaterial);
+        rewardGroup.add(sparkles);
+        group.add(rewardGroup);
+
+        return {
+            group,
+            top: top ?? null,
+            topClosedY: top?.position.y ?? 0,
+            topClosedRotX: top?.rotation.x ?? 0,
+            topClosedRotZ: top?.rotation.z ?? 0,
+            liftDistance: size.y * 0.38,
+            rewardGroup,
+            crystal,
+            rewardLight,
+            sparkles,
+            sparkleMaterial,
+        };
+    }, [prizeCapsule.scene]);
 
     const [showScene, setShowScene] = useState<any>();
     const [isPicking, setIsPicking] = useState(false);
@@ -54,6 +219,7 @@ const Scene: ForwardRefRenderFunction<
     const animationQueueRef = useRef<any[]>([]);
     const selectedIndexRef = useRef<number | null>(null);
     const caughtBallIndexRef = useRef<number | null>(null);
+    const onDeliveryCompleteRef = useRef<(() => void) | null>(null);
     const revealTimerRef = useRef<number>(0);
     const openAmountRef = useRef<number>(0);  // 0=closed, 1=fully open (quarter-sine eased)
     const savedCameraRef = useRef<{ x: number; y: number; z: number } | null>(null);
@@ -110,7 +276,6 @@ const Scene: ForwardRefRenderFunction<
             // the winning drop chute rather than falling straight down it
             if (outcomeRef.current === 'LOSS') {
                 selectedBall.setLinvel({ x: 0.3, y: -0.5, z: -0.3 }, true);
-                caughtBallIndexRef.current = null;
             }
             selectedIndexRef.current = null;
         }
@@ -133,7 +298,15 @@ const Scene: ForwardRefRenderFunction<
             { ref: claw2Ref, name: 'claw2', rotation: [0, 0, 0], start: 1.7, duration: 0.3 },
             { ref: claw3Ref, name: 'claw3', rotation: [0, 0, 0], start: 1.7, duration: 0.3, cb: releaseBall },
             { ref: clawRest1Ref, name: 'clawRest1', position: [0, 0, 0], start: 2.2, duration: 1.5 },
-            { ref: clawRestRef, name: 'clawRest', position: [0, 0, 0], start: 2.2, duration: 1.5, cb: () => setIsPicking(false) },
+            {
+                ref: clawRestRef, name: 'clawRest', position: [0, 0, 0], start: 2.2, duration: 1.5,
+                cb: () => {
+                    setIsPicking(false);
+                    const onDeliveryComplete = onDeliveryCompleteRef.current;
+                    onDeliveryCompleteRef.current = null;
+                    onDeliveryComplete?.();
+                },
+            },
         ]
     }, [releaseBall]);
 
@@ -161,9 +334,10 @@ const Scene: ForwardRefRenderFunction<
         ];
     }, [catchBall, playNextAnimation]);
 
-    const onPick = (outcome?: string) => {
+    const onPick = (outcome?: string, onDeliveryComplete?: () => void) => {
         if (isPicking) return;
         outcomeRef.current = outcome || null;
+        onDeliveryCompleteRef.current = onDeliveryComplete ?? null;
         setIsPicking(true);
         animationQueueRef.current.push({ animationSet: catchAnimationSet, startTime: 0, isPlaying: false });
     }
@@ -217,11 +391,11 @@ const Scene: ForwardRefRenderFunction<
             );
             if (dist < 0.02) {
                 state.camera.position.set(home.x, home.y, home.z);
-                setIsCameraResetting(false);
                 if (orbitControlsRef.current) {
                     orbitControlsRef.current.target.set(0, 2.1, 0);
-                    orbitControlsRef.current.reset();
+                    orbitControlsRef.current.update();
                 }
+                setIsCameraResetting(false);
             }
         }
 
@@ -301,27 +475,21 @@ const Scene: ForwardRefRenderFunction<
         });
 
         if (revealState && revealState.active) {
-            const ball = ballRefs.current[revealState.ballIndex]?.current;
-            if (ball) {
-                if (revealState.step === 'centering') {
-                    const pos = ball.translation();
-                    if (pos) {
-                        const newX = THREE.MathUtils.damp(pos.x, 0, 4, delta);
-                        const newY = THREE.MathUtils.damp(pos.y, 1.6, 4, delta);
-                        const newZ = THREE.MathUtils.damp(pos.z, 1.2, 4, delta);
-                        ball.setTranslation({ x: newX, y: newY, z: newZ }, true);
+            const reveal = presentationCapsule;
+            if (revealState.step === 'centering') {
+                    const newX = THREE.MathUtils.damp(reveal.group.position.x, 0, 4, delta);
+                    const newY = THREE.MathUtils.damp(reveal.group.position.y, 1.6, 4, delta);
+                    const newZ = THREE.MathUtils.damp(reveal.group.position.z, 1.2, 4, delta);
+                    reveal.group.position.set(newX, newY, newZ);
+                    reveal.group.rotation.y = THREE.MathUtils.damp(reveal.group.rotation.y, 0, 4, delta);
 
-                        const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0);
-                        ball.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
-
-                        const dist = Math.hypot(newX, newY - 1.6, newZ - 1.2);
-                        if (dist < 0.05) {
-                            setRevealState(prev => {
-                                if (!prev) return null;
-                                prev.onReady?.();
-                                return { ...prev, step: 'ready' };
-                            });
-                        }
+                    const dist = Math.hypot(newX, newY - 1.6, newZ - 1.2);
+                    if (dist < 0.05) {
+                        setRevealState(prev => {
+                            if (!prev) return null;
+                            prev.onReady?.();
+                            return { ...prev, step: 'ready' };
+                        });
                     }
                     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 3, delta);
                     state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, 1.7, 3, delta);
@@ -329,11 +497,10 @@ const Scene: ForwardRefRenderFunction<
                     state.camera.lookAt(0, 1.6, 1.2);
                 } else if (revealState.step === 'ready') {
                     const bobY = 1.6 + Math.sin(clock.elapsedTime * 2) * 0.05;
-                    ball.setTranslation({ x: 0, y: bobY, z: 1.2 }, true);
+                    reveal.group.position.set(0, bobY, 1.2);
 
                     // slow spin while waiting for click
-                    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), clock.elapsedTime * 0.4);
-                    ball.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
+                    reveal.group.rotation.y = clock.elapsedTime * 0.4;
 
                     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 3, delta);
                     state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, 1.7, 3, delta);
@@ -341,7 +508,7 @@ const Scene: ForwardRefRenderFunction<
                     state.camera.lookAt(0, 1.6, 1.2);
                 } else if (revealState.step === 'opening' || revealState.step === 'opened') {
                     const bobY = 1.6 + Math.sin(clock.elapsedTime * 1.5) * 0.03;
-                    ball.setTranslation({ x: 0, y: bobY, z: 1.2 }, true);
+                    reveal.group.position.set(0, bobY, 1.2);
 
                     // --- Quarter-sine lid opening (matches test/script.js animation fundamentals) ---
                     // openAmount: 0=closed, 1=open, damped at 5.5 speed
@@ -355,28 +522,23 @@ const Scene: ForwardRefRenderFunction<
                     // Quarter-sine easing gives an organic ease-in-out on the lift
                     const lift = Math.sin(oa * Math.PI * 0.5);
 
-                    const topMesh = ball.getTopMesh();
-                    if (topMesh) {
-                        const topClosedY = ball.getTopClosedY();
-                        const liftDist = ball.getLiftDist();
-                        topMesh.position.y = topClosedY + lift * liftDist;
+                    if (reveal.top) {
+                        reveal.top.position.y = reveal.topClosedY + lift * reveal.liftDistance;
                         // Subtle mechanical tilt as lid opens (matches test reference)
-                        topMesh.rotation.z = ball.getTopClosedRotZ() + lift * 0.08;
-                        topMesh.rotation.x = ball.getTopClosedRotX() + lift * 0.05;
+                        reveal.top.rotation.z = reveal.topClosedRotZ + lift * 0.08;
+                        reveal.top.rotation.x = reveal.topClosedRotX + lift * 0.05;
                     }
 
-                    // Reward orb: rises proportionally with openAmount, WIN only
+                    // Same reward hierarchy as /test: crystal, light, and sparkles rise together.
                     const isWin = revealState.outcome !== 'LOSS';
-                    const rewardMesh = ball.getRewardMesh();
-                    if (rewardMesh && isWin) {
-                        const mat = rewardMesh.material as THREE.MeshStandardMaterial;
-                        if (mat) mat.opacity = THREE.MathUtils.lerp(0, 1, oa);
-                        // Rise from inside (-liftDist*0.5) upward as lid opens
-                        const liftDist = ball.getLiftDist();
-                        rewardMesh.position.y = THREE.MathUtils.lerp(0, liftDist * 0.9, oa);
-                        rewardMesh.rotation.y += delta * 1.5;
-                        ball.setRewardEmissive('#ffffff', Math.min(3, oa * 3));
-                    }
+                    reveal.rewardGroup.visible = isWin;
+                    reveal.rewardGroup.position.y = THREE.MathUtils.lerp(-0.3, 0.35, oa);
+                    reveal.crystal.rotation.y += delta * 1.5;
+                    reveal.crystal.rotation.x += delta * 0.8;
+                    reveal.crystal.scale.setScalar(THREE.MathUtils.lerp(0.2, 1.15, oa));
+                    reveal.rewardLight.intensity = THREE.MathUtils.lerp(0, 4.5, oa);
+                    reveal.sparkleMaterial.opacity = THREE.MathUtils.lerp(0, 0.9, oa);
+                    reveal.sparkles.rotation.y -= delta * 0.5;
 
                     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 4, delta);
                     state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, 1.75, 4, delta);
@@ -385,24 +547,34 @@ const Scene: ForwardRefRenderFunction<
 
                     if (revealState.step === 'opening') {
                         revealTimerRef.current += delta;
-                        // Fire onComplete once lid is 90% open AND timer has run >= 10s
-                        if (revealTimerRef.current >= 10.0 && oa > 0.9) {
+                        // Present the result shortly after the lid reaches its fully-open state.
+                        if (revealTimerRef.current >= 1.15 && oa > 0.9) {
                             revealState.onComplete?.();
                             setRevealState(prev => prev ? { ...prev, step: 'opened' } : null);
                         }
                     }
                 }
-            }
         }
     });
 
     const startReveal = useCallback((outcome: string, onReady?: () => void, onComplete?: () => void) => {
         const idx = caughtBallIndexRef.current != null ? caughtBallIndexRef.current : 0;
+        console.log(`[REVEAL EVENT ${new Date().toISOString()}] startReveal triggered. Ball index: ${idx}, Outcome: ${outcome}`);
         const selectedBall = ballRefs.current[idx]?.current;
         if (selectedBall && selectedBall.setBodyType) {
             selectedBall.setBodyType(2, true);
+            selectedBall.setTranslation({ x: 99, y: -10, z: 99 }, true);
         }
+        presentationCapsule.group.visible = true;
+        presentationCapsule.group.position.set(0, 0.85, 0.45);
+        presentationCapsule.group.rotation.set(0, 0, 0);
+        presentationCapsule.rewardGroup.visible = outcome !== 'LOSS';
+        presentationCapsule.rewardGroup.position.y = -0.3;
+        presentationCapsule.crystal.scale.setScalar(0.2);
+        presentationCapsule.rewardLight.intensity = 0;
+        presentationCapsule.sparkleMaterial.opacity = 0;
         revealTimerRef.current = 0;
+        openAmountRef.current = 0;
         setRevealState({
             active: true,
             ballIndex: idx,
@@ -411,41 +583,41 @@ const Scene: ForwardRefRenderFunction<
             onReady,
             onComplete
         });
-    }, []);
+    }, [presentationCapsule]);
 
     const clickCapsule = useCallback(() => {
-        if (revealState && revealState.step === 'ready') {
-            revealTimerRef.current = 0;
-            setRevealState(prev => prev ? { ...prev, step: 'opening' } : null);
-        }
-    }, [revealState]);
+        console.log(`[REVEAL EVENT ${new Date().toISOString()}] clickCapsule triggered by user interaction.`);
+        revealTimerRef.current = 0;
+        setRevealState(previous => {
+            if (previous?.step === 'ready') {
+                return { ...previous, step: 'opening' };
+            }
+            return previous;
+        });
+    }, []);
 
     const closeReveal = useCallback(() => {
+        console.log(`[REVEAL EVENT ${new Date().toISOString()}] closeReveal triggered. Resetting capsule position and starting camera return.`);
         if (revealState) {
             const selectedBall = ballRefs.current[revealState.ballIndex]?.current;
             if (selectedBall) {
-                const topMesh = selectedBall.getTopMesh();
-                if (topMesh) {
-                    // Reset lid back to its original closed position
-                    topMesh.position.y = selectedBall.getTopClosedY();
-                    topMesh.rotation.z = selectedBall.getTopClosedRotZ();
-                    topMesh.rotation.x = selectedBall.getTopClosedRotX();
-                }
-                const rewardMesh = selectedBall.getRewardMesh();
-                if (rewardMesh) {
-                    rewardMesh.position.y = 0;
-                    if (rewardMesh.material) (rewardMesh.material as any).opacity = 0;
-                    selectedBall.setRewardEmissive('#ffffff', 0);
-                }
                 if (selectedBall.setBodyType) selectedBall.setBodyType(0, true);
                 if (selectedBall.setTranslation) selectedBall.setTranslation({ x: 99, y: -10, z: 99 }, true);
             }
         }
+        if (presentationCapsule.top) {
+            presentationCapsule.top.position.y = presentationCapsule.topClosedY;
+            presentationCapsule.top.rotation.x = presentationCapsule.topClosedRotX;
+            presentationCapsule.top.rotation.z = presentationCapsule.topClosedRotZ;
+        }
+        presentationCapsule.group.visible = false;
+        presentationCapsule.rewardLight.intensity = 0;
+        presentationCapsule.sparkleMaterial.opacity = 0;
         openAmountRef.current = 0; // Reset for next reveal
         setRevealState(null);
         caughtBallIndexRef.current = null;
         setIsCameraResetting(true);
-    }, [revealState]);
+    }, [presentationCapsule, revealState]);
 
     useImperativeHandle(ref, () => ({
         onPick,
@@ -485,12 +657,13 @@ const Scene: ForwardRefRenderFunction<
                     </group>
                 </group>
             </group>
+            <primitive object={presentationCapsule.group} />
             <Physics>
                 {showScene && Array.from({ length: 54 }).map((_, index) => {
                     const x = 0.25 + Math.floor((index % 9) / 3) * 0.3;
                     const y = 2 + Math.floor(index / 9) * 0.3;
                     const z = -0.5 + (index % 3) * 0.3;
-                    return <Ball key={index} ref={ballRefs.current[index]} obj={prizeCapsule.scene} position={[x, y, z]} tintColor={colors[index % 5]} />
+                    return <Ball key={index} ref={ballRefs.current[index]} obj={prizeCapsule.scene} position={[x, y, z]} />
                 })}
                 <RigidBody ccd type="fixed" colliders="trimesh">
                     <primitive object={clawMachine.scene} castShadow />

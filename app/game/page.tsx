@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
    spending     → API call in-flight + coin arc animation.
    playing      → Joystick + DROP enabled. User positions claw.
    grabbing     → Claw animation running. Controls disabled.
-   revealing    → Ball centering + open animation.
+   revealing    → Ball centers, player clicks it open, then sees the outcome.
    ──────────────────────────────────────────────────────────────────────── */
 type Phase = 'intro' | 'spending' | 'playing' | 'grabbing' | 'revealing';
 
@@ -30,17 +30,54 @@ function CoinArc({ visible }: { visible: boolean }) {
                 position: 'absolute',
                 top: '0px',
                 left: '0px',
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle at 35% 30%, #fff 0%, #aaa 60%, #555 100%)',
-                boxShadow: '0 0 8px rgba(255,255,255,0.4)',
+                width: '34px',
+                height: '34px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 zIndex: 50,
                 pointerEvents: 'none',
                 opacity: visible ? 1 : 0,
-                animation: visible ? 'coinArc 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards' : 'none',
+                animation: visible ? 'coinArc 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards' : 'none',
             }}
-        />
+        >
+            <div style={{
+                position: 'relative',
+                width: '30px',
+                height: '30px',
+                transform: 'rotateX(58deg)',
+                transformStyle: 'preserve-3d',
+            }}>
+                {/* The offset lower disk creates a visible coin edge, rather than a sphere. */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    top: '5px',
+                    borderRadius: '50%',
+                    background: '#76520B',
+                    border: '2px solid #4A3100',
+                    boxShadow: '0 3px 4px rgba(0,0,0,0.5)',
+                }} />
+                <div style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '50%',
+                border: '2px solid #FFF1A6',
+                background: 'radial-gradient(circle at 32% 24%, #FFF7B3 0 7%, #F4C542 28%, #C98B12 66%, #875400 100%)',
+                boxShadow: 'inset 0 2px 2px rgba(255,255,255,0.7), inset 0 -3px 3px rgba(72,42,0,0.45)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#6B4300',
+                fontWeight: 900,
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                textShadow: '0 1px rgba(255,255,255,0.45)',
+            }}>
+                ◈
+            </div>
+            </div>
+        </div>
     );
 }
 
@@ -124,10 +161,10 @@ export default function GamePage() {
         if (phase !== 'playing') return;
         setPhase('grabbing');
         const outcome = pendingOutcomeRef.current ?? 'LOSS';
-        ref.current?.onPick(outcome);
 
-        // Wait for claw animation sequence to complete (~4.5s) then reveal
-        setTimeout(() => {
+        // Scene notifies us when the capsule has reached the delivery chute.
+        // This keeps the reveal synchronized with the actual 3D animation.
+        ref.current?.onPick(outcome, () => {
             setPhase('revealing');
             ref.current?.startReveal(
                 outcome,
@@ -137,15 +174,14 @@ export default function GamePage() {
                     setOutcomeCard({ outcome, isWin: outcome !== 'LOSS' });
                 }
             );
-        }, 4500);
+        });
     }, [phase]);
 
-    /* ── Click capsule to open ─────────────────────────────────────────── */
     const handleClickCapsule = useCallback(() => {
-        if (revealStep !== 'ready') return;
+        if (phase !== 'revealing' || revealStep !== 'ready') return;
         setRevealStep('opening');
         ref.current?.clickCapsule();
-    }, [revealStep]);
+    }, [phase, revealStep]);
 
     /* ── Close modal + reset scene ─────────────────────────────────────── */
     const handleClose = useCallback(() => {
@@ -178,9 +214,10 @@ export default function GamePage() {
             {/* Coin arc keyframe */}
             <style>{`
                 @keyframes coinArc {
-                    0%   { transform: translate(calc(50vw - 10px), calc(100vh - 150px)) scale(2); opacity: 1; }
-                    50%  { transform: translate(calc(50vw + 20px), calc(60vh)) scale(2.5); opacity: 1; }
-                    100% { transform: translate(calc(50vw + 40px), calc(65vh)) scale(0); opacity: 0; }
+                    0%   { transform: translate(calc(50vw - 17px), calc(100vh - 52px)) rotateY(0deg) rotateX(12deg) scale(1.2); opacity: 1; }
+                    44%  { transform: translate(calc(46vw), calc(50vh)) rotateY(540deg) rotateX(58deg) scale(1.7); opacity: 1; }
+                    78%  { transform: translate(calc(50vw - 17px), calc(65vh)) rotateY(900deg) rotateX(76deg) scale(1.05); opacity: 1; }
+                    100% { transform: translate(calc(50vw - 17px), calc(67vh)) rotateY(1080deg) rotateX(82deg) scale(0.58); opacity: 0; }
                 }
                 @keyframes pulseRing {
                     0%, 100% { opacity: 0.6; transform: scale(1); }
@@ -388,33 +425,32 @@ export default function GamePage() {
                 )}
 
                 {/* ── REVEALING: "click to open" prompt ─────────────────── */}
-                {revealStep === 'ready' && (
-                    <>
-                        <div style={{
-                            position: 'absolute',
-                            top: '14%',
-                            width: '100%',
-                            textAlign: 'center',
-                            zIndex: 20,
-                            pointerEvents: 'none',
-                            animation: 'pulseRing 1.8s ease-in-out infinite',
+                {phase === 'revealing' && revealStep === 'ready' && (
+                    <div style={{
+                        position: 'absolute', top: '14%', width: '100%', textAlign: 'center',
+                        zIndex: 20, pointerEvents: 'none', animation: 'pulseRing 1.8s ease-in-out infinite',
+                    }}>
+                        <span style={{
+                            fontFamily: 'monospace', fontSize: '14px', fontWeight: 800,
+                            color: 'rgba(255,255,255,0.9)', letterSpacing: '0.25em',
+                            textShadow: '0 0 20px rgba(255,255,255,0.2)',
                         }}>
-                            <span style={{
-                                fontFamily: 'monospace',
-                                fontSize: '14px',
-                                fontWeight: 800,
-                                color: 'rgba(255,255,255,0.9)',
-                                letterSpacing: '0.25em',
-                                textShadow: '0 0 20px rgba(255,255,255,0.2)',
-                            }}>
-                                ✦ CLICK TO OPEN ✦
-                            </span>
-                        </div>
-                        <div
-                            style={{ position: 'absolute', inset: 0, zIndex: 15, cursor: 'pointer' }}
-                            onClick={handleClickCapsule}
-                        />
-                    </>
+                            ✦ CLICK CAPSULE TO OPEN ✦
+                        </span>
+                    </div>
+                )}
+
+                {phase === 'revealing' && revealStep === 'ready' && (
+                    <div
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Open the reward capsule"
+                        style={{ position: 'absolute', inset: 0, zIndex: 15, cursor: 'pointer' }}
+                        onClick={handleClickCapsule}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') handleClickCapsule();
+                        }}
+                    />
                 )}
 
                 {/* ── Outcome modal ──────────────────────────────────────── */}

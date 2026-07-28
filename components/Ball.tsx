@@ -7,7 +7,6 @@ import * as THREE from 'three';
 interface Props {
     obj: any;
     position?: any;
-    tintColor?: string;
 }
 
 export interface BallHandle {
@@ -33,7 +32,25 @@ export interface BallHandle {
     getLiftDist: () => number;
 }
 
-const Ball: ForwardRefRenderFunction<any, Props> = ({ obj, position, tintColor }, ref) => {
+function applyOpaqueCapsuleMaterial(object: THREE.Object3D, color: string) {
+    object.traverse((child) => {
+        if (!(child as THREE.Mesh).isMesh) return;
+        const mesh = child as THREE.Mesh;
+        // Replace the GLB material entirely: its original textures include
+        // colour and alpha data, which otherwise override simple color edits.
+        mesh.material = new THREE.MeshStandardMaterial({
+            color,
+            emissive: '#000000',
+            metalness: 0.25,
+            roughness: 0.32,
+            transparent: false,
+            opacity: 1,
+            depthWrite: true,
+        });
+    });
+}
+
+const Ball: ForwardRefRenderFunction<any, Props> = ({ obj, position }, ref) => {
     const rigidBodyRef = useRef<any>(null);
     const topRef = useRef<THREE.Object3D | null>(null);
     const bottomRef = useRef<THREE.Object3D | null>(null);
@@ -68,11 +85,14 @@ const Ball: ForwardRefRenderFunction<any, Props> = ({ obj, position, tintColor }
         topRef.current = top || null;
         bottomRef.current = bottom || null;
 
-        // Compute bounding box of the entire model to get localLiftDistance
-        // (matches test/script.js approach: liftDist = size.y * 0.38 in model units)
+        // Match test/script.js: compute bounding box, center model pivot at local (0,0,0)
         const box = new THREE.Box3().setFromObject(clone);
         const size = box.getSize(new THREE.Vector3());
-        liftDistRef.current = size.y * 0.38; // in model local units (before group scale 0.003)
+        const center = box.getCenter(new THREE.Vector3());
+        clone.position.sub(center);
+
+        // In local model coordinates (scaled down by group 0.003), lift 45% of total height
+        liftDistRef.current = size.y * 0.45;
 
         if (top) {
             // Store initial lid position/rotation in local model space
@@ -81,14 +101,11 @@ const Ball: ForwardRefRenderFunction<any, Props> = ({ obj, position, tintColor }
             topClosedRotZRef.current = top.rotation.z;
         }
 
-        // Tint the top half
-        if (tintColor && top && (top as THREE.Mesh).isMesh) {
-            const topMesh = top as THREE.Mesh;
-            topMesh.material = (topMesh.material as THREE.Material).clone();
-            (topMesh.material as THREE.MeshStandardMaterial).color.set(tintColor);
-        }
+        // Every prize stays in the monochrome world: black lid, white base.
+        if (top) applyOpaqueCapsuleMaterial(top, '#111111');
+        if (bottom) applyOpaqueCapsuleMaterial(bottom, '#F0F0F0');
         return clone;
-    }, [obj, tintColor]);
+    }, [obj]);
 
     useImperativeHandle(ref, () => ({
         translation: () => rigidBodyRef.current?.translation() || null,
@@ -133,8 +150,8 @@ const Ball: ForwardRefRenderFunction<any, Props> = ({ obj, position, tintColor }
                 <group scale={0.003}>
                     <primitive object={clonedObj} />
                     {/* Glowing reward orb — opacity 0 until WIN reveal */}
-                    <mesh ref={rewardRef} position={[0, 0, 0]}>
-                        <sphereGeometry args={[20, 16, 16]} />
+                    <mesh ref={rewardRef} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                        <cylinderGeometry args={[20, 20, 4, 32]} />
                         <meshStandardMaterial
                             color="#ffffff"
                             emissive="#ffffff"

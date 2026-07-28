@@ -37,6 +37,7 @@ const stateMap: IStateMap = {};
 // The standalone test scene views its capsule from ~6 units away. BLNK's game
 // camera is much closer, so a 2.6-unit test capsule puts the camera inside it.
 const REVEAL_CAPSULE_DIAMETER = 0.42;
+const REWARD_CRYSTAL_RADIUS = REVEAL_CAPSULE_DIAMETER * 0.16;
 
 const Scene: ForwardRefRenderFunction<
     any,
@@ -93,18 +94,6 @@ const Scene: ForwardRefRenderFunction<
             }
         }
 
-        // Some exports retain an authoring-space gap between the two meshes.
-        // Snap the lid to the base before recording its closed transform so the
-        // ready state is closed and only the click animation opens it.
-        if (top && bottom) {
-            model.updateMatrixWorld(true);
-            const topBounds = new THREE.Box3().setFromObject(top);
-            const bottomBounds = new THREE.Box3().setFromObject(bottom);
-            const rawGap = topBounds.min.y - bottomBounds.max.y;
-            const seamOverlap = size.y * 0.008;
-            top.position.y -= rawGap + seamOverlap;
-            model.updateMatrixWorld(true);
-        }
 
         // The presentation capsule should be read clearly over the machine;
         // unlike physics prizes, it is deliberately a foreground reveal object.
@@ -151,10 +140,12 @@ const Scene: ForwardRefRenderFunction<
         group.add(normalizedModel);
         group.visible = false;
 
+        const scaleRatio = REVEAL_CAPSULE_DIAMETER / 2.6;
         const rewardGroup = new THREE.Group();
-        rewardGroup.position.y = -0.3;
+        rewardGroup.position.y = -0.3 * scaleRatio;
         const crystal = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.2, 0.2, 0.04, 32),
+            // Make a flat cylinder (radiusTop, radiusBottom, height, radialSegments)
+            new THREE.CylinderGeometry(0.8, 0.8, 0.1, 32),
             new THREE.MeshStandardMaterial({
                 color: 0xffd700,
                 metalness: 0.9,
@@ -169,21 +160,21 @@ const Scene: ForwardRefRenderFunction<
         (crystal.material as THREE.MeshStandardMaterial).depthWrite = true;
         rewardGroup.add(crystal);
 
-        const rewardLight = new THREE.PointLight(0xf59e0b, 0, 4);
+        const rewardLight = new THREE.PointLight(0xf59e0b, 0, 1.2);
         rewardGroup.add(rewardLight);
 
         const sparkleCount = 35;
         const sparklePositions = new Float32Array(sparkleCount * 3);
         for (let index = 0; index < sparklePositions.length; index += 3) {
-            sparklePositions[index] = (Math.random() - 0.5) * 0.8;
-            sparklePositions[index + 1] = (Math.random() - 0.5) * 0.8;
-            sparklePositions[index + 2] = (Math.random() - 0.5) * 0.8;
+            sparklePositions[index] = (Math.random() - 0.5) * REVEAL_CAPSULE_DIAMETER * 0.5;
+            sparklePositions[index + 1] = (Math.random() - 0.5) * REVEAL_CAPSULE_DIAMETER * 0.5;
+            sparklePositions[index + 2] = (Math.random() - 0.5) * REVEAL_CAPSULE_DIAMETER * 0.5;
         }
         const sparkleGeometry = new THREE.BufferGeometry();
         sparkleGeometry.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3));
         const sparkleMaterial = new THREE.PointsMaterial({
             color: 0xffffff,
-            size: 0.03,
+            size: 0.012,
             transparent: true,
             opacity: 0,
         });
@@ -203,6 +194,7 @@ const Scene: ForwardRefRenderFunction<
             rewardLight,
             sparkles,
             sparkleMaterial,
+            scaleRatio,
         };
     }, [prizeCapsule.scene]);
 
@@ -476,14 +468,31 @@ const Scene: ForwardRefRenderFunction<
 
         if (revealState && revealState.active) {
             const reveal = presentationCapsule;
+
+            // --- Always damp openAmount and position lid every frame (matches test/script.js) ---
+            openAmountRef.current = THREE.MathUtils.damp(
+                openAmountRef.current,
+                revealState.step === 'opening' || revealState.step === 'opened' ? 1 : 0,
+                5.5,
+                delta
+            );
+            const oa = openAmountRef.current;
+            const lift = Math.sin(oa * Math.PI * 0.5);
+
+            if (reveal.top) {
+                reveal.top.position.y = reveal.topClosedY + lift * reveal.liftDistance;
+                reveal.top.rotation.z = reveal.topClosedRotZ + lift * 0.08;
+                reveal.top.rotation.x = reveal.topClosedRotX + lift * 0.05;
+            }
+
             if (revealState.step === 'centering') {
                     const newX = THREE.MathUtils.damp(reveal.group.position.x, 0, 4, delta);
                     const newY = THREE.MathUtils.damp(reveal.group.position.y, 1.6, 4, delta);
-                    const newZ = THREE.MathUtils.damp(reveal.group.position.z, 1.2, 4, delta);
+                    const newZ = THREE.MathUtils.damp(reveal.group.position.z, 1.4, 4, delta);
                     reveal.group.position.set(newX, newY, newZ);
                     reveal.group.rotation.y = THREE.MathUtils.damp(reveal.group.rotation.y, 0, 4, delta);
 
-                    const dist = Math.hypot(newX, newY - 1.6, newZ - 1.2);
+                    const dist = Math.hypot(newX, newY - 1.6, newZ - 1.4);
                     if (dist < 0.05) {
                         setRevealState(prev => {
                             if (!prev) return null;
@@ -493,57 +502,38 @@ const Scene: ForwardRefRenderFunction<
                     }
                     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 3, delta);
                     state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, 1.7, 3, delta);
-                    state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 2.0, 3, delta);
-                    state.camera.lookAt(0, 1.6, 1.2);
+                    state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 2.15, 3, delta);
+                    state.camera.lookAt(0, 1.6, 1.4);
                 } else if (revealState.step === 'ready') {
                     const bobY = 1.6 + Math.sin(clock.elapsedTime * 2) * 0.05;
-                    reveal.group.position.set(0, bobY, 1.2);
+                    reveal.group.position.set(0, bobY, 1.4);
 
                     // slow spin while waiting for click
                     reveal.group.rotation.y = clock.elapsedTime * 0.4;
 
                     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 3, delta);
                     state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, 1.7, 3, delta);
-                    state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 2.0, 3, delta);
-                    state.camera.lookAt(0, 1.6, 1.2);
+                    state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 2.15, 3, delta);
+                    state.camera.lookAt(0, 1.6, 1.4);
                 } else if (revealState.step === 'opening' || revealState.step === 'opened') {
                     const bobY = 1.6 + Math.sin(clock.elapsedTime * 1.5) * 0.03;
-                    reveal.group.position.set(0, bobY, 1.2);
+                    reveal.group.position.set(0, bobY, 1.4);
 
-                    // --- Quarter-sine lid opening (matches test/script.js animation fundamentals) ---
-                    // openAmount: 0=closed, 1=open, damped at 5.5 speed
-                    openAmountRef.current = THREE.MathUtils.damp(
-                        openAmountRef.current,
-                        revealState.step === 'opening' || revealState.step === 'opened' ? 1 : 0,
-                        5.5,
-                        delta
-                    );
-                    const oa = openAmountRef.current;
-                    // Quarter-sine easing gives an organic ease-in-out on the lift
-                    const lift = Math.sin(oa * Math.PI * 0.5);
-
-                    if (reveal.top) {
-                        reveal.top.position.y = reveal.topClosedY + lift * reveal.liftDistance;
-                        // Subtle mechanical tilt as lid opens (matches test reference)
-                        reveal.top.rotation.z = reveal.topClosedRotZ + lift * 0.08;
-                        reveal.top.rotation.x = reveal.topClosedRotX + lift * 0.05;
-                    }
-
-                    // Same reward hierarchy as /test: crystal, light, and sparkles rise together.
+                    // Same reward hierarchy as /test, scaled down to match the presentation capsule size
                     const isWin = revealState.outcome !== 'LOSS';
                     reveal.rewardGroup.visible = isWin;
-                    reveal.rewardGroup.position.y = THREE.MathUtils.lerp(-0.3, 0.35, oa);
+                    reveal.rewardGroup.position.y = THREE.MathUtils.lerp(-0.3 * reveal.scaleRatio, 0.35 * reveal.scaleRatio, oa);
                     reveal.crystal.rotation.y += delta * 1.5;
                     reveal.crystal.rotation.x += delta * 0.8;
-                    reveal.crystal.scale.setScalar(THREE.MathUtils.lerp(0.2, 1.15, oa));
+                    reveal.crystal.scale.setScalar(THREE.MathUtils.lerp(0.2 * reveal.scaleRatio, 1.15 * reveal.scaleRatio, oa));
                     reveal.rewardLight.intensity = THREE.MathUtils.lerp(0, 4.5, oa);
                     reveal.sparkleMaterial.opacity = THREE.MathUtils.lerp(0, 0.9, oa);
                     reveal.sparkles.rotation.y -= delta * 0.5;
 
                     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 4, delta);
                     state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, 1.75, 4, delta);
-                    state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 1.85, 4, delta);
-                    state.camera.lookAt(0, bobY + 0.1, 1.2);
+                    state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 2.0, 4, delta);
+                    state.camera.lookAt(0, bobY + 0.1, 1.4);
 
                     if (revealState.step === 'opening') {
                         revealTimerRef.current += delta;
@@ -569,8 +559,8 @@ const Scene: ForwardRefRenderFunction<
         presentationCapsule.group.position.set(0, 0.85, 0.45);
         presentationCapsule.group.rotation.set(0, 0, 0);
         presentationCapsule.rewardGroup.visible = outcome !== 'LOSS';
-        presentationCapsule.rewardGroup.position.y = -0.3;
-        presentationCapsule.crystal.scale.setScalar(0.2);
+        presentationCapsule.rewardGroup.position.y = -0.3 * presentationCapsule.scaleRatio;
+        presentationCapsule.crystal.scale.setScalar(0.2 * presentationCapsule.scaleRatio);
         presentationCapsule.rewardLight.intensity = 0;
         presentationCapsule.sparkleMaterial.opacity = 0;
         revealTimerRef.current = 0;

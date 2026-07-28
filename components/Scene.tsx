@@ -4,7 +4,7 @@ import { Environment, OrbitControls, useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { Physics, RigidBody } from '@react-three/rapier';
 import { createRef, forwardRef, ForwardRefRenderFunction, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Vector3 } from 'three';
+import * as THREE from 'three';
 import { angleToRadian, clonePosition, cloneRotation, cloneScale, getPosition, getRotation, getScale } from '../utils';
 import Ball from './Ball';
 
@@ -43,6 +43,7 @@ const Scene: ForwardRefRenderFunction<
 
     const [showScene, setShowScene] = useState<any>();
     const [isPicking, setIsPicking] = useState(false);
+    const orbitControlsRef = useRef<any>(null);
     const clawRestRef = useRef<any>(null);
     const clawRest1Ref = useRef<any>(null);
     const clawRest2Ref = useRef<any>(null);
@@ -52,6 +53,16 @@ const Scene: ForwardRefRenderFunction<
     const claw3Ref = useRef<any>(null);
     const animationQueueRef = useRef<any[]>([]);
     const selectedIndexRef = useRef<number | null>(null);
+    const caughtBallIndexRef = useRef<number | null>(null);
+    const revealTimerRef = useRef<number>(0);
+    const [revealState, setRevealState] = useState<{
+        active: boolean;
+        ballIndex: number;
+        outcome: string;
+        step: 'centering' | 'ready' | 'opening' | 'opened';
+        onReady?: () => void;
+        onComplete?: () => void;
+    } | null>(null);
     const ballRefs = useRef(Array.from({ length: 54 }, () => createRef<any>()));
 
     const joystickRef = useRef<any>({ x: 0, z: 0 });
@@ -63,11 +74,6 @@ const Scene: ForwardRefRenderFunction<
     const outcomeRef = useRef<string | null>(null);
 
     const catchBall = useCallback(() => {
-        if (outcomeRef.current === 'LOSS') {
-            selectedIndexRef.current = null;
-            return;
-        }
-        
         const x1 = clawRest1Ref.current.position.x;
         const z1 = clawRestRef.current.position.z;
         const distances = ballRefs.current.map((ballRef, index) => {
@@ -85,6 +91,7 @@ const Scene: ForwardRefRenderFunction<
 
         distances.sort((d1, d2) => d1.distance - d2.distance);
         selectedIndexRef.current = distances[0].index;
+        caughtBallIndexRef.current = distances[0].index;
 
         if (selectedIndexRef.current != null) {
             const selectedBall = ballRefs.current[selectedIndexRef.current].current;
@@ -96,9 +103,16 @@ const Scene: ForwardRefRenderFunction<
         if (selectedIndexRef.current != null) {
             const selectedBall = ballRefs.current[selectedIndexRef.current].current;
             selectedBall.setGravityScale(1);
+            // On a LOSS give the ball a small sideways impulse so it bounces away from
+            // the winning drop chute rather than falling straight down it
+            if (outcomeRef.current === 'LOSS') {
+                selectedBall.setLinvel({ x: 0.3, y: -0.5, z: -0.3 }, true);
+                caughtBallIndexRef.current = null;
+            }
             selectedIndexRef.current = null;
         }
     }, []);
+
 
     const spreadClawAnimation = useMemo(() => {
         return [
@@ -183,7 +197,8 @@ const Scene: ForwardRefRenderFunction<
         applyGrayscale(claw3.scene);
     }, [initGame, floor, clawMachine, clawRest, clawRest1, clawRest2, clawRest3, claw1, claw2, claw3]);
 
-    useFrame(({ clock }) => {
+    useFrame((state, delta) => {
+        const clock = state.clock;
         if (clawRestRef.current && clawRest1Ref.current) {
             let z = clawRestRef.current.position.z + joystickRef.current.z * 0.0001;
             let x = clawRest1Ref.current.position.x + joystickRef.current.x * 0.0001;
@@ -198,7 +213,7 @@ const Scene: ForwardRefRenderFunction<
             const y = clawRest3Ref.current.position.y;
             const z = clawRestRef.current.position.z;
             const ball = ballRefs.current[selectedIndexRef.current].current;
-            ball.setTranslation(new Vector3(x, y + 3.05, z));
+            ball.setTranslation(new THREE.Vector3(x, y + 3.05, z));
         }
 
         animationQueueRef.current = animationQueueRef.current.filter((item) => item.animationSet.length > 0);
@@ -258,9 +273,136 @@ const Scene: ForwardRefRenderFunction<
             });
             return { ...item, animationSet, startTime, isPlaying: true };
         });
+
+        if (revealState && revealState.active) {
+            const ball = ballRefs.current[revealState.ballIndex]?.current;
+            if (ball) {
+                if (revealState.step === 'centering') {
+                    const pos = ball.translation();
+                    if (pos) {
+                        const newX = THREE.MathUtils.damp(pos.x, 0, 4, delta);
+                        const newY = THREE.MathUtils.damp(pos.y, 1.6, 4, delta);
+                        const newZ = THREE.MathUtils.damp(pos.z, 1.2, 4, delta);
+                        ball.setTranslation({ x: newX, y: newY, z: newZ }, true);
+
+                        const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0);
+                        ball.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
+
+                        const dist = Math.hypot(newX, newY - 1.6, newZ - 1.2);
+                        if (dist < 0.05) {
+                            setRevealState(prev => {
+                                if (!prev) return null;
+                                prev.onReady?.();
+                                return { ...prev, step: 'ready' };
+                            });
+                        }
+                    }
+                    state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 3, delta);
+                    state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, 1.7, 3, delta);
+                    state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 2.0, 3, delta);
+                    state.camera.lookAt(0, 1.6, 1.2);
+                } else if (revealState.step === 'ready') {
+                    const bobY = 1.6 + Math.sin(clock.elapsedTime * 2) * 0.05;
+                    ball.setTranslation({ x: 0, y: bobY, z: 1.2 }, true);
+                    
+                    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), clock.elapsedTime * 0.5);
+                    ball.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
+
+                    state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 3, delta);
+                    state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, 1.7, 3, delta);
+                    state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 2.0, 3, delta);
+                    state.camera.lookAt(0, 1.6, 1.2);
+                } else if (revealState.step === 'opening' || revealState.step === 'opened') {
+                    const bobY = 1.6 + Math.sin(clock.elapsedTime * 2) * 0.03;
+                    ball.setTranslation({ x: 0, y: bobY, z: 1.2 }, true);
+
+                    const topMesh = ball.getTopMesh();
+                    if (topMesh) {
+                        topMesh.position.y = THREE.MathUtils.damp(topMesh.position.y, 100, 6, delta);
+                    }
+
+                    const rewardMesh = ball.getRewardMesh();
+                    if (rewardMesh) {
+                        const mat = rewardMesh.material as THREE.MeshStandardMaterial;
+                        if (mat) mat.opacity = THREE.MathUtils.damp(mat.opacity || 0, 1, 4, delta);
+                        const intensity = Math.min(3, (topMesh?.position.y || 0) / 20);
+                        ball.setRewardEmissive("#00ffff", intensity);
+                        rewardMesh.rotation.y += delta * 2;
+                        rewardMesh.position.y = THREE.MathUtils.damp(rewardMesh.position.y, 25, 4, delta);
+                    }
+
+                    state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 4, delta);
+                    state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, 1.75, 4, delta);
+                    state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 1.85, 4, delta);
+                    state.camera.lookAt(0, bobY + 0.1, 1.2);
+
+                    if (revealState.step === 'opening') {
+                        revealTimerRef.current += delta;
+                        if (revealTimerRef.current >= 2.5) {
+                            revealState.onComplete?.();
+                            setRevealState(prev => prev ? { ...prev, step: 'opened' } : null);
+                        }
+                    }
+                }
+            }
+        }
     });
 
-    useImperativeHandle(ref, () => ({ onPick, onJoystick }));
+    const startReveal = useCallback((outcome: string, onReady?: () => void, onComplete?: () => void) => {
+        const idx = caughtBallIndexRef.current != null ? caughtBallIndexRef.current : 0;
+        const selectedBall = ballRefs.current[idx]?.current;
+        if (selectedBall && selectedBall.setBodyType) {
+            selectedBall.setBodyType(2, true);
+        }
+        revealTimerRef.current = 0;
+        setRevealState({
+            active: true,
+            ballIndex: idx,
+            outcome,
+            step: 'centering',
+            onReady,
+            onComplete
+        });
+    }, []);
+
+    const clickCapsule = useCallback(() => {
+        if (revealState && revealState.step === 'ready') {
+            revealTimerRef.current = 0;
+            setRevealState(prev => prev ? { ...prev, step: 'opening' } : null);
+        }
+    }, [revealState]);
+
+    const closeReveal = useCallback(() => {
+        if (revealState) {
+            const selectedBall = ballRefs.current[revealState.ballIndex]?.current;
+            if (selectedBall) {
+                const topMesh = selectedBall.getTopMesh();
+                if (topMesh) topMesh.position.y = 0;
+                const rewardMesh = selectedBall.getRewardMesh();
+                if (rewardMesh) {
+                    rewardMesh.position.y = 0;
+                    if (rewardMesh.material) (rewardMesh.material as any).opacity = 0;
+                    selectedBall.setRewardEmissive("#00ffff", 0);
+                }
+                if (selectedBall.setBodyType) selectedBall.setBodyType(0, true);
+                if (selectedBall.setTranslation) selectedBall.setTranslation({ x: 0, y: -10, z: 0 }, true);
+            }
+        }
+        setRevealState(null);
+        caughtBallIndexRef.current = null;
+        if (orbitControlsRef.current) {
+            orbitControlsRef.current.reset();
+        }
+    }, [revealState]);
+
+    useImperativeHandle(ref, () => ({
+        onPick,
+        onJoystick,
+        startReveal,
+        clickCapsule,
+        closeReveal,
+        getRevealStep: () => revealState?.step
+    }), [onPick, onJoystick, startReveal, clickCapsule, closeReveal, revealState]);
 
     return (
         <>
@@ -303,6 +445,7 @@ const Scene: ForwardRefRenderFunction<
                 </RigidBody>
             </Physics >
             <OrbitControls
+                ref={orbitControlsRef}
                 minAzimuthAngle={angleToRadian(-20)}
                 maxAzimuthAngle={angleToRadian(20)}
                 minPolarAngle={angleToRadian(70)}
@@ -311,6 +454,7 @@ const Scene: ForwardRefRenderFunction<
                 maxDistance={2.8}
                 target={[0.0, 2.1, 0.0]}
                 enablePan={false}
+                enabled={!revealState?.active}
             />
         </>
     )

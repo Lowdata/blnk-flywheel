@@ -7,7 +7,6 @@ import ButtonsControl from '@/components/ButtonsControl';
 import JoystickControl from '@/components/JoystickControl';
 import ProgressBar from '@/components/ProgressBar';
 import Scene from '@/components/Scene';
-import PrizeCapsule from '@/components/PrizeCapsule';
 import { useRouter } from 'next/navigation';
 
 export default function GamePage() {
@@ -15,6 +14,7 @@ export default function GamePage() {
   const [progress, setProgress] = useState(0);
   const [colorFlood, setColorFlood] = useState(false);
   const [lootCard, setLootCard] = useState<any>(null);
+  const [revealStep, setRevealStep] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   
   const ref = useRef<any>(null);
@@ -41,26 +41,35 @@ export default function GamePage() {
   }, [router, toast]);
 
   const handlePick = async () => {
-    
     try {
       const res = await fetch('/api/game/play', { method: 'POST' });
       const data = await res.json();
       
       if (res.ok) {
         setUser({ ...user, coins: data.coinsLeft });
-        ref.current?.onPick(data.outcome); // pass outcome to scene if needed
+        ref.current?.onPick(data.outcome);
         
-        // Simulating the drop animation time before revealing the outcome
+        // Wait 4.5 seconds for the physical claw drop animation into the chute
         setTimeout(() => {
           if (data.outcome !== 'LOSS') {
             setColorFlood(true);
-            setTimeout(() => {
-              setLootCard(data.outcome);
-            }, 1000); // 1 second after color flood, show card
+            // Trigger seamless in-scene reveal on the exact caught physics object
+            ref.current?.startReveal(
+              data.outcome,
+              () => {
+                // onReady callback: capsule centered in view and ready to open
+                setRevealStep('ready');
+              },
+              () => {
+                // onComplete callback: 2 seconds after lid lift animation completes
+                setRevealStep('opened');
+                setLootCard(data.outcome);
+              }
+            );
           } else {
             toast({ title: 'Better luck next time!', status: 'info' });
           }
-        }, 5000); // adjust based on actual animation duration
+        }, 4500);
       } else {
         toast({ title: data.message, status: 'error' });
       }
@@ -85,30 +94,98 @@ export default function GamePage() {
   }
 
   return (
-    <Box position='relative' w='100vw' h='100vh' overflow="hidden" bg="black" transition="background 1s ease" style={{ backgroundColor: colorFlood ? 'white' : 'black' }}>
+    <Box position='relative' w='100vw' h='100vh' overflow="hidden" bg="black" transition="background 1s ease" style={{ backgroundColor: colorFlood ? '#0a0e17' : 'black' }}>
       
-      {/* Color Flood Overlay */}
+      {/* Color Flood / Backdrop Dimming Overlay during reveal */}
       <Box 
         position="absolute" 
         inset={0} 
-        bgGradient="linear(to-tr, cyan.400, purple.500, pink.500, yellow.400)" 
+        bgGradient="radial(circle at center, rgba(0, 255, 255, 0.15), rgba(0, 0, 0, 0.85))" 
         opacity={colorFlood ? 1 : 0} 
-        transition="opacity 1s ease-in-out" 
+        transition="opacity 1.5s ease-in-out" 
         zIndex={1} 
         pointerEvents="none"
-        mixBlendMode="screen"
       />
 
-      {/* Interactive 3D Prize Capsule Reveal */}
+      {/* Interactive Click Overlay when capsule is ready to open */}
+      {revealStep === 'ready' && (
+        <>
+          <Box
+            position="absolute"
+            top="15%"
+            width="100%"
+            textAlign="center"
+            zIndex={20}
+            pointerEvents="none"
+          >
+            <Text fontSize="2xl" fontWeight="black" color="cyan.300" letterSpacing="0.2em" textShadow="0 0 20px rgba(0,255,255,0.8)">
+              ✨ CLICK CAPSULE TO OPEN ✨
+            </Text>
+          </Box>
+          <Box
+            position="absolute"
+            inset={0}
+            zIndex={15}
+            cursor="pointer"
+            onClick={() => {
+              setRevealStep('opening');
+              ref.current?.clickCapsule();
+            }}
+          />
+        </>
+      )}
+
+      {/* Apple-like UI CTA Modal (appears only AFTER animation finishes) */}
       {lootCard && (
-        <PrizeCapsule
-          outcome={lootCard}
-          onClose={() => {
-            setLootCard(null);
-            setColorFlood(false);
-          }}
-          onShare={shareOnX}
-        />
+        <Box
+          position="absolute"
+          inset={0}
+          zIndex={30}
+          bg="blackAlpha.800"
+          backdropFilter="blur(16px)"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          p={6}
+        >
+          <VStack spacing={6} bg="whiteAlpha.100" p={8} rounded="2xl" border="1px solid" borderColor="whiteAlpha.300" maxW="md" w="full" textAlign="center" boxShadow="0 0 50px rgba(0, 255, 255, 0.2)">
+            <Text fontSize="xs" fontWeight="bold" color="cyan.400" letterSpacing="widest">
+              REWARD UNLOCKED
+            </Text>
+            <Text fontSize="3xl" fontWeight="black" color="white" textTransform="uppercase" letterSpacing="wider">
+              {lootCard}
+            </Text>
+            <Text fontSize="sm" color="whiteAlpha.800">
+              You have successfully extracted a rare whitelist spot from the machine.
+            </Text>
+            <Button
+              w="full"
+              size="lg"
+              bg="#1DA1F2"
+              color="white"
+              _hover={{ bg: '#1a91da', transform: 'translateY(-2px)', boxShadow: '0 5px 15px rgba(29, 161, 242, 0.4)' }}
+              onClick={shareOnX}
+              rounded="xl"
+              fontWeight="bold"
+            >
+              Share on X to Claim
+            </Button>
+            <Button
+              w="full"
+              variant="ghost"
+              color="whiteAlpha.700"
+              _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+              onClick={() => {
+                setLootCard(null);
+                setRevealStep(null);
+                setColorFlood(false);
+                ref.current?.closeReveal();
+              }}
+            >
+              Close & Return to Machine
+            </Button>
+          </VStack>
+        </Box>
       )}
 
       {/* Loading Modal */}
@@ -127,7 +204,7 @@ export default function GamePage() {
       <JoystickControl onJoystick={(x: any, z: any) => ref.current?.onJoystick(x, z)} />
       <ButtonsControl onStart={() => {}} onPick={handlePick} />
 
-      <Canvas shadows='soft' camera={{ position: [0, 2.1, 2.2], fov: 55 }}>
+      <Canvas shadows camera={{ position: [0, 2.1, 2.2], fov: 55 }}>
         <Scene ref={ref} setIsLoading={setIsLoading} setProgress={setProgress} />
       </Canvas>
     </Box>

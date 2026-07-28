@@ -112,11 +112,14 @@ blnk-flywheel/
 - **SSR Hydration Mismatch (`Next.MetadataOutlet` vs `@chakra-ui/next-js`)**: Resolved structural DOM mismatches in `app/page.tsx` and `app/game/page.tsx`. Replaced `if (!mounted) return null;` at root page levels with consistent static/loading `<Box>` containers, preventing empty layout children from forcing Emotion `<style>` tag injection next to `<Next.MetadataOutlet>`.
 - **Duplicate Variable Declarations**: Removed duplicate `mounted` state variables in dashboard.
 - **Legacy Asset Duplication**: Removed references to `ball-blue.glb`, `ball-green.glb`, `ball-pink.glb`, `ball-red.glb`, `ball-yellow.glb` in favor of canonical `/assets/pre.glb`.
+- **WebGL Context Lost / Multi-Canvas Leak**: Eliminated secondary `<Canvas>` mounting by deleting `PrizeCapsule.tsx` and implementing seamless in-scene reward reveal directly on the main R3F Canvas in `Scene.tsx`.
+- **PCFSoftShadowMap Deprecation Warning**: Replaced deprecated `shadows='soft'` parameter on `<Canvas>` in `app/game/page.tsx` with standard `shadows`.
+- **setLinvel TypeError in Scene.tsx**: Added missing velocity and force methods (`setLinvel`, `setAngvel`, `linvel`, `angvel`, `resetForces`, `resetTorques`) to `BallHandle` interface and `useImperativeHandle` in `Ball.tsx`, allowing `Scene.tsx` to reset ball velocity upon claw release without runtime errors.
 
 ---
 
 # Outstanding Issues
-- None. All gameplay parity requirements, capsule refactoring, interactive 3D reveal animations, and build verification checks have been met.
+- None. All major mechanical bugs, hydration errors, asset duplicates, and multi-canvas context loss bugs have been fully resolved.
 
 ---
 
@@ -125,13 +128,15 @@ blnk-flywheel/
 - **Gameplay Parity First**: All core mechanical behaviors (physics, grab boundaries, joystick speed) match `claw-game` before visual enhancements or reveal overlays are enabled.
 - **Canonical Asset Paths**: Use `/assets/pre.glb` across all components to eliminate duplication.
 - **Keep `Ball.tsx`**: Retained component filename and refactored internally to render capsules without breaking existing physics or props interfaces.
-- **Apple-Like Reveal Aesthetics**: Replaced static 2D modal with interactive 3D gachapon capsule reveal (`PrizeCapsule.tsx`) using continuous R3F procedural damping in `useFrame`.
+- **Single Canvas / Seamless Reveal**: Never instantiate a new Canvas or new capsule for the reveal sequence. The exact caught capsule object is carried through the chute and transitioned smoothly to the center of the viewport for reveal in `Scene.tsx`, preserving color (`tintColor`) and material continuity.
 
 ---
 
 # TODO
 - [x] Phase 1: Asset Setup & Project Memory Foundation (`pre.glb` copying and `history.md` initialization).
 - [x] Phase 2: Audit and align `Scene.tsx`, `JoystickControl.tsx`, and `ButtonsControl.tsx` with `claw-game`. Refactor `Ball.tsx` to render `/assets/pre.glb` with distinct tints.
-- [x] Phase 3: Create `PrizeCapsule.tsx` with procedural R3F animations (Idle, Hover, Click, Close) and integrate into `app/game/page.tsx`.
-- [x] Phase 4: Definition of Done verification (`npm run build`, zero warnings, smooth FPS, history documentation update).
-- [ ] Perform Definition of Done verification (`npm run build`, zero warnings, smooth FPS).
+- [x] Phase 3: Architect seamless single-canvas prize reveal in `Scene.tsx` / `Ball.tsx` reusing the exact caught capsule.
+- [x] Phase 3: Delay UI reward CTA modal until 2 seconds after lid lift animation completes.
+- [x] Phase 3: Fix console warnings (`PCFSoftShadowMap`, verify node resolution for `top` and `bottom`).
+- [x] Phase 4 & 5: Definition of Done verification (`npm run build`, zero warnings, smooth FPS, history documentation update).
+

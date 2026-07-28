@@ -55,6 +55,8 @@ const Scene: ForwardRefRenderFunction<
     const selectedIndexRef = useRef<number | null>(null);
     const caughtBallIndexRef = useRef<number | null>(null);
     const revealTimerRef = useRef<number>(0);
+    const savedCameraRef = useRef<{ x: number; y: number; z: number } | null>(null);
+    const cameraResettingRef = useRef(false);
     const [revealState, setRevealState] = useState<{
         active: boolean;
         ballIndex: number;
@@ -199,6 +201,26 @@ const Scene: ForwardRefRenderFunction<
 
     useFrame((state, delta) => {
         const clock = state.clock;
+
+        // Camera return-to-home after reveal is closed
+        if (cameraResettingRef.current) {
+            const home = { x: 0, y: 2.1, z: 2.2 };
+            state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, home.x, 5, delta);
+            state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, home.y, 5, delta);
+            state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, home.z, 5, delta);
+            state.camera.lookAt(0, 2.1, 0);
+            const dist = Math.hypot(
+                state.camera.position.x - home.x,
+                state.camera.position.y - home.y,
+                state.camera.position.z - home.z
+            );
+            if (dist < 0.02) {
+                state.camera.position.set(home.x, home.y, home.z);
+                cameraResettingRef.current = false;
+                if (orbitControlsRef.current) orbitControlsRef.current.reset();
+            }
+        }
+
         if (clawRestRef.current && clawRest1Ref.current) {
             let z = clawRestRef.current.position.z + joystickRef.current.z * 0.0001;
             let x = clawRest1Ref.current.position.x + joystickRef.current.x * 0.0001;
@@ -304,8 +326,9 @@ const Scene: ForwardRefRenderFunction<
                 } else if (revealState.step === 'ready') {
                     const bobY = 1.6 + Math.sin(clock.elapsedTime * 2) * 0.05;
                     ball.setTranslation({ x: 0, y: bobY, z: 1.2 }, true);
-                    
-                    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), clock.elapsedTime * 0.5);
+
+                    // slow spin while waiting for click
+                    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), clock.elapsedTime * 0.4);
                     ball.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
 
                     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 3, delta);
@@ -313,22 +336,27 @@ const Scene: ForwardRefRenderFunction<
                     state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, 2.0, 3, delta);
                     state.camera.lookAt(0, 1.6, 1.2);
                 } else if (revealState.step === 'opening' || revealState.step === 'opened') {
-                    const bobY = 1.6 + Math.sin(clock.elapsedTime * 2) * 0.03;
+                    const bobY = 1.6 + Math.sin(clock.elapsedTime * 1.5) * 0.03;
                     ball.setTranslation({ x: 0, y: bobY, z: 1.2 }, true);
 
+                    // Lift the top lid - model is scaled 0.003 so 2000 model units ≈ 6 world units
                     const topMesh = ball.getTopMesh();
                     if (topMesh) {
-                        topMesh.position.y = THREE.MathUtils.damp(topMesh.position.y, 100, 6, delta);
+                        topMesh.position.y = THREE.MathUtils.damp(topMesh.position.y, 2000, 5, delta);
                     }
 
+                    // Reward token: only animate on WIN
+                    const isWin = revealState.outcome !== 'LOSS';
                     const rewardMesh = ball.getRewardMesh();
-                    if (rewardMesh) {
+                    if (rewardMesh && isWin) {
                         const mat = rewardMesh.material as THREE.MeshStandardMaterial;
-                        if (mat) mat.opacity = THREE.MathUtils.damp(mat.opacity || 0, 1, 4, delta);
-                        const intensity = Math.min(3, (topMesh?.position.y || 0) / 20);
-                        ball.setRewardEmissive("#00ffff", intensity);
-                        rewardMesh.rotation.y += delta * 2;
-                        rewardMesh.position.y = THREE.MathUtils.damp(rewardMesh.position.y, 25, 4, delta);
+                        if (mat) {
+                            mat.opacity = THREE.MathUtils.damp(mat.opacity ?? 0, 1, 3, delta);
+                        }
+                        // rise out of capsule in model space
+                        rewardMesh.position.y = THREE.MathUtils.damp(rewardMesh.position.y, 600, 3, delta);
+                        rewardMesh.rotation.y += delta * 1.5;
+                        ball.setRewardEmissive('#ffffff', Math.min(3, (topMesh?.position.y ?? 0) / 400));
                     }
 
                     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 4, delta);
@@ -382,17 +410,16 @@ const Scene: ForwardRefRenderFunction<
                 if (rewardMesh) {
                     rewardMesh.position.y = 0;
                     if (rewardMesh.material) (rewardMesh.material as any).opacity = 0;
-                    selectedBall.setRewardEmissive("#00ffff", 0);
+                    selectedBall.setRewardEmissive('#ffffff', 0);
                 }
                 if (selectedBall.setBodyType) selectedBall.setBodyType(0, true);
-                if (selectedBall.setTranslation) selectedBall.setTranslation({ x: 0, y: -10, z: 0 }, true);
+                if (selectedBall.setTranslation) selectedBall.setTranslation({ x: 99, y: -10, z: 99 }, true);
             }
         }
         setRevealState(null);
         caughtBallIndexRef.current = null;
-        if (orbitControlsRef.current) {
-            orbitControlsRef.current.reset();
-        }
+        // Drive the camera back to home position via useFrame
+        cameraResettingRef.current = true;
     }, [revealState]);
 
     useImperativeHandle(ref, () => ({

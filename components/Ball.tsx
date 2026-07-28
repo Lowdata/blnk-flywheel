@@ -92,15 +92,15 @@ const Ball: ForwardRefRenderFunction<any, Props> = ({ obj, position, tintColor }
             {showObj && clonedObj && (
                 <group scale={0.003}>
                     <primitive object={clonedObj} />
-                    {/* Glowing reward token inside capsule, initially hidden / zero opacity until reveal */}
-                    <mesh ref={rewardRef} position={[0, 0, 0]} scale={[1, 1, 1]}>
-                        <octahedronGeometry args={[25, 0]} />
+                    {/* Glowing reward orb — opacity 0 until WIN reveal */}
+                    <mesh ref={rewardRef} position={[0, 0, 0]}>
+                        <sphereGeometry args={[20, 16, 16]} />
                         <meshStandardMaterial
                             color="#ffffff"
-                            emissive="#00ffff"
+                            emissive="#ffffff"
                             emissiveIntensity={0}
-                            roughness={0.2}
-                            metalness={0.8}
+                            roughness={0.1}
+                            metalness={0.6}
                             transparent
                             opacity={0}
                         />

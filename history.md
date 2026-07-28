@@ -118,25 +118,48 @@ blnk-flywheel/
 
 ---
 
-# Outstanding Issues
-- None. All major mechanical bugs, hydration errors, asset duplicates, and multi-canvas context loss bugs have been fully resolved.
+# Phase 6 Changes (latest)
+
+## Ball Opening Animation (from `test/` reference)
+- `Ball.tsx`: On clone, computes bounding box of the entire model. Stores `topClosedY`, `topClosedRotX`, `topClosedRotZ` (lid's initial local-space position/rotation) and `liftDist = size.y * 0.38` (38% of model height in model units, matching `test/script.js`). All exposed via `useImperativeHandle` as `getTopClosedY()`, `getLiftDist()`, etc.
+- `Scene.tsx`: Replaces hardcoded `topMesh.position.y → 2000` with a proper `openAmountRef` scalar (0→1), damped at 5.5 speed. A quarter-sine `Math.sin(oa * PI * 0.5)` is applied to the lift for organic ease-in-out. Adds a subtle mechanical tilt (`rotation.z += lift * 0.08`, `rotation.x += lift * 0.05`). Reward orb rises proportionally with the same `openAmount`. `onComplete` now fires when `oa > 0.9 && timer >= 2s`.
+
+## Game Phase State Machine
+`app/game/page.tsx` is now driven by a 5-phase state: `intro → spending → playing → grabbing → revealing`. 
+- **PLAY GAME button** appears on `intro` phase. Clicking calls the API immediately.
+- **Coin arc animation** plays during the network round-trip (CSS keyframe, 700ms).
+- After animation: joystick + DROP button appear and are enabled.
+- **DROP** starts the claw animation; outcome was already fetched and stored in `pendingOutcomeRef`.
+
+## UI Premium Monochrome
+- Background: `#0A0A0A` (near-pure black).
+- All fonts: `monospace` with `letterSpacing: '0.2em'` — no color UI anywhere.
+- 3D joystick: radial-gradient concave well + metallic knob with layered box-shadows.
+- 3D DROP button: 6px `box-shadow` pedestal + instant press on `mousedown` (80ms transition).
+- Home button (← DASHBOARD) in top bar.
+- Coin balance HUD in top bar.
+
+## Security Hardening
+- `app/api/game/play/route.ts`: `Math.random()` → `crypto.getRandomValues()` (Uint32Array). Atomic deduction via `findOneAndUpdate` with `$gte` guard. Rate limiter: 1 play / 10s per wallet. Correct PRD odds: GTD 5%, FCFS 30%, LOSS 65%. Cost: 3 coins per play.
+- `lib/rateLimit.ts` (new): In-memory token bucket, auto-prunes every 60s.
+- `next.config.ts`: Security headers for all routes (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security`). Long-lived cache headers for GLB assets.
+
+## Build
+- `npx tsc --noEmit`: ✅ 0 errors
+- `npm run build`: ✅ Clean, 2.8s compile
 
 ---
 
-# Decisions Made
-- **Read-Only Reference**: `../claw-game` is strictly read-only. No edits are permitted there.
-- **Gameplay Parity First**: All core mechanical behaviors (physics, grab boundaries, joystick speed) match `claw-game` before visual enhancements or reveal overlays are enabled.
-- **Canonical Asset Paths**: Use `/assets/pre.glb` across all components to eliminate duplication.
-- **Keep `Ball.tsx`**: Retained component filename and refactored internally to render capsules without breaking existing physics or props interfaces.
-- **Single Canvas / Seamless Reveal**: Never instantiate a new Canvas or new capsule for the reveal sequence. The exact caught capsule object is carried through the chute and transitioned smoothly to the center of the viewport for reveal in `Scene.tsx`, preserving color (`tintColor`) and material continuity.
+# Outstanding Issues
+- None. Phase 6 complete.
 
 ---
 
 # TODO
-- [x] Phase 1: Asset Setup & Project Memory Foundation (`pre.glb` copying and `history.md` initialization).
-- [x] Phase 2: Audit and align `Scene.tsx`, `JoystickControl.tsx`, and `ButtonsControl.tsx` with `claw-game`. Refactor `Ball.tsx` to render `/assets/pre.glb` with distinct tints.
-- [x] Phase 3: Architect seamless single-canvas prize reveal in `Scene.tsx` / `Ball.tsx` reusing the exact caught capsule.
-- [x] Phase 3: Delay UI reward CTA modal until 2 seconds after lid lift animation completes.
-- [x] Phase 3: Fix console warnings (`PCFSoftShadowMap`, verify node resolution for `top` and `bottom`).
-- [x] Phase 4 & 5: Definition of Done verification (`npm run build`, zero warnings, smooth FPS, history documentation update).
+- [x] Phase 1: Asset Setup & Project Memory Foundation.
+- [x] Phase 2: Audit and align Scene.tsx, JoystickControl.tsx, and ButtonsControl.tsx with claw-game.
+- [x] Phase 3: Architect seamless single-canvas prize reveal in Scene.tsx / Ball.tsx.
+- [x] Phase 4 & 5: Definition of Done verification.
+- [x] Phase 6: Ball opening animation (quarter-sine + bounding-box lift), UI overhaul (play-button flow, 3D controls, monochrome, home button), security (crypto RNG, rate limit, headers).
+
 

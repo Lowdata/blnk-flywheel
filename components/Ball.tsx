@@ -26,6 +26,11 @@ export interface BallHandle {
     getBottomMesh: () => THREE.Object3D | null;
     getRewardMesh: () => THREE.Mesh | null;
     setRewardEmissive: (color: string, intensity: number) => void;
+    // Reveal animation helpers — derived from bounding box at load time
+    getTopClosedY: () => number;
+    getTopClosedRotX: () => number;
+    getTopClosedRotZ: () => number;
+    getLiftDist: () => number;
 }
 
 const Ball: ForwardRefRenderFunction<any, Props> = ({ obj, position, tintColor }, ref) => {
@@ -34,19 +39,49 @@ const Ball: ForwardRefRenderFunction<any, Props> = ({ obj, position, tintColor }
     const bottomRef = useRef<THREE.Object3D | null>(null);
     const rewardRef = useRef<THREE.Mesh | null>(null);
 
+    // Stored in refs so they are stable across renders and usable in useImperativeHandle
+    const topClosedYRef = useRef(0);
+    const topClosedRotXRef = useRef(0);
+    const topClosedRotZRef = useRef(0);
+    const liftDistRef = useRef(200); // safe fallback in model units
+
     const clonedObj = useMemo(() => {
         if (!obj) return null;
         const clone = obj.clone(true);
-        const top = clone.getObjectByName("top");
-        const bottom = clone.getObjectByName("bottom");
-        
+        let top = clone.getObjectByName('top') as THREE.Object3D | undefined;
+        let bottom = clone.getObjectByName('bottom') as THREE.Object3D | undefined;
+
         if (!top || !bottom) {
-            console.error("[Ball] CRITICAL: 'top' or 'bottom' node missing in pre.glb — reveal will be broken.");
+            console.warn("[Ball] Could not find exact 'top' and 'bottom' names. Attempting automatic mesh separation...");
+            const meshes: THREE.Object3D[] = [];
+            clone.traverse((child: THREE.Object3D) => {
+                if ((child as THREE.Mesh).isMesh) meshes.push(child);
+            });
+            if (meshes.length >= 2) {
+                bottom = meshes[0];
+                top = meshes[1];
+            } else {
+                console.error("[Ball] CRITICAL: pre.glb must contain distinct meshes for 'top' and 'bottom'");
+            }
         }
-        
+
         topRef.current = top || null;
         bottomRef.current = bottom || null;
 
+        // Compute bounding box of the entire model to get localLiftDistance
+        // (matches test/script.js approach: liftDist = size.y * 0.38 in model units)
+        const box = new THREE.Box3().setFromObject(clone);
+        const size = box.getSize(new THREE.Vector3());
+        liftDistRef.current = size.y * 0.38; // in model local units (before group scale 0.003)
+
+        if (top) {
+            // Store initial lid position/rotation in local model space
+            topClosedYRef.current = top.position.y;
+            topClosedRotXRef.current = top.rotation.x;
+            topClosedRotZRef.current = top.rotation.z;
+        }
+
+        // Tint the top half
         if (tintColor && top && (top as THREE.Mesh).isMesh) {
             const topMesh = top as THREE.Mesh;
             topMesh.material = (topMesh.material as THREE.Material).clone();
@@ -71,12 +106,17 @@ const Ball: ForwardRefRenderFunction<any, Props> = ({ obj, position, tintColor }
         getBottomMesh: () => bottomRef.current,
         getRewardMesh: () => rewardRef.current,
         setRewardEmissive: (color: string, intensity: number) => {
-            if (rewardRef.current && rewardRef.current.material) {
+            if (rewardRef.current?.material) {
                 const mat = rewardRef.current.material as THREE.MeshStandardMaterial;
                 mat.emissive.set(color);
                 mat.emissiveIntensity = intensity;
             }
-        }
+        },
+        // Reveal animation helpers
+        getTopClosedY: () => topClosedYRef.current,
+        getTopClosedRotX: () => topClosedRotXRef.current,
+        getTopClosedRotZ: () => topClosedRotZRef.current,
+        getLiftDist: () => liftDistRef.current,
     }), []);
 
     const [showObj, setShowObj] = useState(false);

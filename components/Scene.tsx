@@ -55,8 +55,9 @@ const Scene: ForwardRefRenderFunction<
     const selectedIndexRef = useRef<number | null>(null);
     const caughtBallIndexRef = useRef<number | null>(null);
     const revealTimerRef = useRef<number>(0);
+    const openAmountRef = useRef<number>(0);  // 0=closed, 1=fully open (quarter-sine eased)
     const savedCameraRef = useRef<{ x: number; y: number; z: number } | null>(null);
-    const cameraResettingRef = useRef(false);
+    const [isCameraResetting, setIsCameraResetting] = useState(false);
     const [revealState, setRevealState] = useState<{
         active: boolean;
         ballIndex: number;
@@ -203,7 +204,7 @@ const Scene: ForwardRefRenderFunction<
         const clock = state.clock;
 
         // Camera return-to-home after reveal is closed
-        if (cameraResettingRef.current) {
+        if (isCameraResetting) {
             const home = { x: 0, y: 2.1, z: 2.2 };
             state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, home.x, 5, delta);
             state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, home.y, 5, delta);
@@ -216,8 +217,11 @@ const Scene: ForwardRefRenderFunction<
             );
             if (dist < 0.02) {
                 state.camera.position.set(home.x, home.y, home.z);
-                cameraResettingRef.current = false;
-                if (orbitControlsRef.current) orbitControlsRef.current.reset();
+                setIsCameraResetting(false);
+                if (orbitControlsRef.current) {
+                    orbitControlsRef.current.target.set(0, 2.1, 0);
+                    orbitControlsRef.current.reset();
+                }
             }
         }
 
@@ -339,24 +343,39 @@ const Scene: ForwardRefRenderFunction<
                     const bobY = 1.6 + Math.sin(clock.elapsedTime * 1.5) * 0.03;
                     ball.setTranslation({ x: 0, y: bobY, z: 1.2 }, true);
 
-                    // Lift the top lid - model is scaled 0.003 so 2000 model units ≈ 6 world units
+                    // --- Quarter-sine lid opening (matches test/script.js animation fundamentals) ---
+                    // openAmount: 0=closed, 1=open, damped at 5.5 speed
+                    openAmountRef.current = THREE.MathUtils.damp(
+                        openAmountRef.current,
+                        revealState.step === 'opening' || revealState.step === 'opened' ? 1 : 0,
+                        5.5,
+                        delta
+                    );
+                    const oa = openAmountRef.current;
+                    // Quarter-sine easing gives an organic ease-in-out on the lift
+                    const lift = Math.sin(oa * Math.PI * 0.5);
+
                     const topMesh = ball.getTopMesh();
                     if (topMesh) {
-                        topMesh.position.y = THREE.MathUtils.damp(topMesh.position.y, 2000, 5, delta);
+                        const topClosedY = ball.getTopClosedY();
+                        const liftDist = ball.getLiftDist();
+                        topMesh.position.y = topClosedY + lift * liftDist;
+                        // Subtle mechanical tilt as lid opens (matches test reference)
+                        topMesh.rotation.z = ball.getTopClosedRotZ() + lift * 0.08;
+                        topMesh.rotation.x = ball.getTopClosedRotX() + lift * 0.05;
                     }
 
-                    // Reward token: only animate on WIN
+                    // Reward orb: rises proportionally with openAmount, WIN only
                     const isWin = revealState.outcome !== 'LOSS';
                     const rewardMesh = ball.getRewardMesh();
                     if (rewardMesh && isWin) {
                         const mat = rewardMesh.material as THREE.MeshStandardMaterial;
-                        if (mat) {
-                            mat.opacity = THREE.MathUtils.damp(mat.opacity ?? 0, 1, 3, delta);
-                        }
-                        // rise out of capsule in model space
-                        rewardMesh.position.y = THREE.MathUtils.damp(rewardMesh.position.y, 600, 3, delta);
+                        if (mat) mat.opacity = THREE.MathUtils.lerp(0, 1, oa);
+                        // Rise from inside (-liftDist*0.5) upward as lid opens
+                        const liftDist = ball.getLiftDist();
+                        rewardMesh.position.y = THREE.MathUtils.lerp(0, liftDist * 0.9, oa);
                         rewardMesh.rotation.y += delta * 1.5;
-                        ball.setRewardEmissive('#ffffff', Math.min(3, (topMesh?.position.y ?? 0) / 400));
+                        ball.setRewardEmissive('#ffffff', Math.min(3, oa * 3));
                     }
 
                     state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, 0, 4, delta);
@@ -366,7 +385,8 @@ const Scene: ForwardRefRenderFunction<
 
                     if (revealState.step === 'opening') {
                         revealTimerRef.current += delta;
-                        if (revealTimerRef.current >= 2.5) {
+                        // Fire onComplete once lid is 90% open AND timer has run >= 10s
+                        if (revealTimerRef.current >= 10.0 && oa > 0.9) {
                             revealState.onComplete?.();
                             setRevealState(prev => prev ? { ...prev, step: 'opened' } : null);
                         }
@@ -405,7 +425,12 @@ const Scene: ForwardRefRenderFunction<
             const selectedBall = ballRefs.current[revealState.ballIndex]?.current;
             if (selectedBall) {
                 const topMesh = selectedBall.getTopMesh();
-                if (topMesh) topMesh.position.y = 0;
+                if (topMesh) {
+                    // Reset lid back to its original closed position
+                    topMesh.position.y = selectedBall.getTopClosedY();
+                    topMesh.rotation.z = selectedBall.getTopClosedRotZ();
+                    topMesh.rotation.x = selectedBall.getTopClosedRotX();
+                }
                 const rewardMesh = selectedBall.getRewardMesh();
                 if (rewardMesh) {
                     rewardMesh.position.y = 0;
@@ -416,10 +441,10 @@ const Scene: ForwardRefRenderFunction<
                 if (selectedBall.setTranslation) selectedBall.setTranslation({ x: 99, y: -10, z: 99 }, true);
             }
         }
+        openAmountRef.current = 0; // Reset for next reveal
         setRevealState(null);
         caughtBallIndexRef.current = null;
-        // Drive the camera back to home position via useFrame
-        cameraResettingRef.current = true;
+        setIsCameraResetting(true);
     }, [revealState]);
 
     useImperativeHandle(ref, () => ({
@@ -481,7 +506,7 @@ const Scene: ForwardRefRenderFunction<
                 maxDistance={2.8}
                 target={[0.0, 2.1, 0.0]}
                 enablePan={false}
-                enabled={!revealState?.active}
+                enabled={!revealState?.active && !isCameraResetting}
             />
         </>
     )

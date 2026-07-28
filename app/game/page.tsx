@@ -7,6 +7,7 @@ import ButtonsControl from '@/components/ButtonsControl';
 import JoystickControl from '@/components/JoystickControl';
 import ProgressBar from '@/components/ProgressBar';
 import Scene from '@/components/Scene';
+import PrizeCapsule from '@/components/PrizeCapsule';
 import { useRouter } from 'next/navigation';
 
 export default function GamePage() {
@@ -98,23 +99,16 @@ export default function GamePage() {
         mixBlendMode="screen"
       />
 
-      {/* Loot Card Modal */}
+      {/* Interactive 3D Prize Capsule Reveal */}
       {lootCard && (
-        <Box position="absolute" inset={0} zIndex={50} display="flex" alignItems="center" justifyContent="center" bg="blackAlpha.800" backdropFilter="blur(10px)">
-          <VStack bg="white" p={8} rounded="xl" shadow="2xl" border="4px solid black" maxW="sm" textAlign="center" color="black" gap={6}>
-            <Text fontSize="4xl" fontWeight="bold">🎉 YOU WON! 🎉</Text>
-            <Box w="200px" h="300px" bgGradient="linear(to-br, cyan.400, purple.500)" border="8px solid black" rounded="md" display="flex" alignItems="center" justifyContent="center">
-              <Text fontSize="6xl" fontWeight="black" color="white" transform="rotate(-15deg)">{lootCard}</Text>
-            </Box>
-            <Text fontSize="lg" fontWeight="bold">Claim your WL spot by sharing on X!</Text>
-            <Button size="lg" colorScheme="twitter" w="full" onClick={shareOnX}>
-              Share on X to Claim
-            </Button>
-            <Button variant="ghost" onClick={() => { setLootCard(null); setColorFlood(false); }}>
-              Close
-            </Button>
-          </VStack>
-        </Box>
+        <PrizeCapsule
+          outcome={lootCard}
+          onClose={() => {
+            setLootCard(null);
+            setColorFlood(false);
+          }}
+          onShare={shareOnX}
+        />
       )}
 
       {/* Loading Modal */}

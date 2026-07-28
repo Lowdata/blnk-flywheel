@@ -38,13 +38,8 @@ const Scene: ForwardRefRenderFunction<
     const claw1 = useGLTF("/claw1.glb");
     const claw2 = useGLTF("/claw2.glb");
     const claw3 = useGLTF("/claw3.glb");
-    const blueBall = useGLTF("/ball-blue.glb");
-    const greenBall = useGLTF("/ball-green.glb");
-    const pinkBall = useGLTF("/ball-pink.glb");
-    const redBall = useGLTF("/ball-red.glb");
-    const yellowBall = useGLTF("/ball-yellow.glb");
-
-    const balls = [blueBall, greenBall, pinkBall, redBall, yellowBall]
+    const prizeCapsule = useGLTF("/assets/pre.glb");
+    const colors = useMemo(() => ['#3182CE', '#38A169', '#D69E2E', '#E53E3E', '#D53F8C'], []);
 
     const [showScene, setShowScene] = useState<any>();
     const [isPicking, setIsPicking] = useState(false);
@@ -301,7 +296,7 @@ const Scene: ForwardRefRenderFunction<
                     const x = 0.25 + Math.floor((index % 9) / 3) * 0.3;
                     const y = 2 + Math.floor(index / 9) * 0.3;
                     const z = -0.5 + (index % 3) * 0.3;
-                    return <Ball key={index} ref={ballRefs.current[index]} obj={balls[index % 5].scene} position={[x, y, z]} />
+                    return <Ball key={index} ref={ballRefs.current[index]} obj={prizeCapsule.scene} position={[x, y, z]} tintColor={colors[index % 5]} />
                 })}
                 <RigidBody ccd type="fixed" colliders="trimesh">
                     <primitive object={clawMachine.scene} castShadow />

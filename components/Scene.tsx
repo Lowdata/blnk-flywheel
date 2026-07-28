@@ -30,6 +30,7 @@ interface PresentationCapsule {
     rewardLight: THREE.PointLight;
     sparkles: THREE.Points;
     sparkleMaterial: THREE.PointsMaterial;
+    scaleRatio: number;
 }
 
 const stateMap: IStateMap = {};

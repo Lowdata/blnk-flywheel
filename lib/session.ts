@@ -8,10 +8,19 @@ export interface SessionData {
   };
 }
 
+const secretCookiePassword = process.env.SECRET_COOKIE_PASSWORD || process.env.SESSION_PASSWORD;
+
+if (!secretCookiePassword || secretCookiePassword.length < 32) {
+  throw new Error(
+    'SECRET_COOKIE_PASSWORD (or SESSION_PASSWORD) environment variable must be set and at least 32 characters long to secure session encryption.'
+  );
+}
+
 export const sessionOptions: SessionOptions = {
-  password: process.env.SECRET_COOKIE_PASSWORD || 'complex_password_at_least_32_characters_long_for_iron_session',
+  password: secretCookiePassword,
   cookieName: 'blnk_siwe',
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
   },
 };
+

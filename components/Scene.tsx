@@ -49,7 +49,6 @@ const Scene: ForwardRefRenderFunction<
 > = ({ setIsLoading, setProgress, }, ref) => {
     // removed useImperativeHandle from here
 
-    const floor = useGLTF("/floor.glb");
     const clawMachine = useGLTF("/clawMachine.glb");
     const clawRest = useGLTF("/clawRest.glb");
     const clawRest1 = useGLTF("/clawRest1.glb");
@@ -356,7 +355,6 @@ const Scene: ForwardRefRenderFunction<
             });
         };
 
-        applyGrayscale(floor.scene);
         applyGrayscale(clawMachine.scene);
         applyGrayscale(clawRest.scene);
         applyGrayscale(clawRest1.scene);
@@ -365,7 +363,7 @@ const Scene: ForwardRefRenderFunction<
         applyGrayscale(claw1.scene);
         applyGrayscale(claw2.scene);
         applyGrayscale(claw3.scene);
-    }, [initGame, floor, clawMachine, clawRest, clawRest1, clawRest2, clawRest3, claw1, claw2, claw3]);
+    }, [initGame, clawMachine, clawRest, clawRest1, clawRest2, clawRest3, claw1, claw2, claw3]);
 
     useFrame((state, delta) => {
         const clock = state.clock;
@@ -625,8 +623,12 @@ const Scene: ForwardRefRenderFunction<
                 files="https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/dancing_hall_1k.hdr"
             />
             <ambientLight intensity={2} />
-            <pointLight position={[-2, 5, 8]} intensity={50} castShadow />
-            <primitive object={floor.scene} receiveShadow position={[0, -0.25, 0]} />
+            <color attach="background" args={['#16161a']} />
+            <fog attach="fog" args={['#16161a', 4, 12]} />
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.25, 0]} receiveShadow>
+                <planeGeometry args={[60, 60]} />
+                <meshStandardMaterial color="#1a1a1e" roughness={0.9} metalness={0.1} />
+            </mesh>
             <group ref={clawRestRef}>
                 <group position={[0, 3.28, 0]}>
                     <primitive object={clawRest.scene} />
@@ -662,14 +664,12 @@ const Scene: ForwardRefRenderFunction<
             </Physics >
             <OrbitControls
                 ref={orbitControlsRef}
-                minAzimuthAngle={angleToRadian(-20)}
-                maxAzimuthAngle={angleToRadian(20)}
-                minPolarAngle={angleToRadian(70)}
-                maxPolarAngle={angleToRadian(88)}
+                enableRotate={false}
+                enablePan={false}
+                enableZoom={false}
                 minDistance={1.2}
                 maxDistance={2.8}
                 target={[0.0, 2.1, 0.0]}
-                enablePan={false}
                 enabled={!revealState?.active && !isCameraResetting}
             />
         </>

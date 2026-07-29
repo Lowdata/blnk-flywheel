@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Box, Button, Flex, Heading, Text, VStack, HStack, SimpleGrid, useToast, Input } from '@chakra-ui/react';
-import { BrowserProvider, getAddress } from 'ethers';
-import { SiweMessage } from 'siwe';
+
 import { useRouter } from 'next/navigation';
 import SpotlightCard from '@/components/SpotlightCard';
 import SoundButton from '@/components/SoundButton';
@@ -152,6 +151,9 @@ export default function Dashboard() {
         toast({ title: 'MetaMask not found', status: 'error' });
         return;
       }
+      const { BrowserProvider, getAddress } = await import('ethers');
+      const { SiweMessage } = await import('siwe');
+
       const provider = new BrowserProvider(window.ethereum);
       const accounts = await provider.send('eth_requestAccounts', []);
       const address = getAddress(accounts[0]);
@@ -266,16 +268,6 @@ export default function Dashboard() {
       setClaimingInvite(false);
     }
   };
-
-  if (loading) {
-    return (
-      <Box minH="100vh" bg="#060d08" color="white" display="flex" alignItems="center" justifyContent="center">
-        <Text fontFamily="var(--font-pixel)" fontSize="md" color="green.400" letterSpacing="wider">
-          LOADING BLNK...
-        </Text>
-      </Box>
-    );
-  }
 
   return (
     <Box minH="100vh" w="100%" bg="#060d08" color="white" position="relative" pb={20} style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', overflowY: 'auto', overscrollBehaviorY: 'auto' }}>

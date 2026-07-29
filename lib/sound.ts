@@ -3,6 +3,7 @@ class SoundManager {
   private ctx: AudioContext | null = null;
   private muted = false;
   private listeners = new Set<(muted: boolean) => void>();
+  private audioInitialized = false;
 
   // Audio elements cache
   private audioFiles: {
@@ -24,8 +25,15 @@ class SoundManager {
   constructor() {
     if (typeof window !== 'undefined') {
       this.muted = localStorage.getItem('blnk_sound_muted') === 'true';
-      this.initAudioFiles();
+      // Audio files are lazy-loaded on first interaction to avoid
+      // blocking page load with ~1.2MB of MP3 network requests.
     }
+  }
+
+  private ensureAudioFiles() {
+    if (this.audioInitialized || typeof window === 'undefined') return;
+    this.audioInitialized = true;
+    this.initAudioFiles();
   }
 
   private initAudioFiles() {
@@ -140,6 +148,7 @@ class SoundManager {
   // 1. Joystick in use: Claw Moving sound (first 8 seconds of clawmovingsound.mp3)
   public playMove() {
     if (this.muted) return;
+    this.ensureAudioFiles();
     const audio = this.audioFiles.move;
     if (audio) {
       if (!this.isMovePlaying || audio.paused) {
@@ -183,6 +192,7 @@ class SoundManager {
   // 2. Drop section: Claw Dropping sound (first 8 seconds of clawmovingsound.mp3)
   public playDrop() {
     if (this.muted) return;
+    this.ensureAudioFiles();
     const audio = this.audioFiles.drop;
     if (audio) {
       this.isDropPlaying = true;
@@ -227,6 +237,7 @@ class SoundManager {
   public playBallDrop() {
     this.stopDrop(); // ensure dropping sound stops when ball lands in chute
     if (this.muted) return;
+    this.ensureAudioFiles();
     const audio = this.audioFiles.ballDrop;
     if (audio) {
       audio.currentTime = 0;
@@ -253,6 +264,7 @@ class SoundManager {
   // 6. Coin Toss Sound (/sounds/coinsound.mp3)
   public playCoin() {
     if (this.muted) return;
+    this.ensureAudioFiles();
     const audio = this.audioFiles.coin;
     if (audio) {
       audio.currentTime = 0;
@@ -263,6 +275,7 @@ class SoundManager {
   // 7. Win Sound (/sounds/winsound.mp3)
   public playWin(isGrand = false) {
     if (this.muted) return;
+    this.ensureAudioFiles();
     const audio = this.audioFiles.win;
     if (audio) {
       audio.currentTime = 0;
@@ -273,6 +286,7 @@ class SoundManager {
   // 8. Loss Sound (/sounds/losssound.mp3)
   public playLoss() {
     if (this.muted) return;
+    this.ensureAudioFiles();
     const audio = this.audioFiles.loss;
     if (audio) {
       audio.currentTime = 0;

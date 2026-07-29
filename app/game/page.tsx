@@ -6,7 +6,9 @@ import { Canvas, useThree } from '@react-three/fiber';
 import ButtonsControl from '@/components/ButtonsControl';
 import JoystickControl from '@/components/JoystickControl';
 import ProgressBar from '@/components/ProgressBar';
-import Scene from '@/components/Scene';
+import dynamic from 'next/dynamic';
+
+const Scene = dynamic(() => import('@/components/Scene'), { ssr: false });
 import { useRouter } from 'next/navigation';
 import { soundManager } from '@/lib/sound';
 import SoundButton from '@/components/SoundButton';

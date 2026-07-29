@@ -17,6 +17,9 @@ const ButtonsControl: FC<{
             flexDirection: 'column',
             alignItems: 'center',
             gap: '8px',
+            touchAction: 'none',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
         }}>
             <span style={{
                 fontFamily: 'var(--font-pixel)',
@@ -57,6 +60,9 @@ const ButtonsControl: FC<{
                         borderRadius: '50%',
                         cursor: disabled ? 'not-allowed' : 'pointer',
                         outline: 'none',
+                        touchAction: 'none',
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
                         fontFamily: 'var(--font-pixel)',
                         fontWeight: 800,
                         fontSize: '11px',
@@ -78,7 +84,6 @@ const ButtonsControl: FC<{
                             `,
                         transform: 'translateY(0px)',
                         transition: 'transform 70ms ease, box-shadow 70ms ease',
-                        userSelect: 'none',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Box, Modal, ModalContent, ModalOverlay, Text, useToast } from '@chakra-ui/react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import ButtonsControl from '@/components/ButtonsControl';
 import JoystickControl from '@/components/JoystickControl';
 import ProgressBar from '@/components/ProgressBar';
@@ -10,6 +10,7 @@ import Scene from '@/components/Scene';
 import { useRouter } from 'next/navigation';
 import { soundManager } from '@/lib/sound';
 import SoundButton from '@/components/SoundButton';
+import * as THREE from 'three';
 
 /* ─── Game Phase State Machine ──────────────────────────────────────────────
    intro        → Big "PLAY GAME" button. Controls hidden.
@@ -22,6 +23,82 @@ type Phase = 'intro' | 'spending' | 'playing' | 'grabbing' | 'revealing';
 
 /* ─── Outcome Modal Types ────────────────────────────────────────────────── */
 type OutcomeCard = { outcome: string; isWin: boolean } | null;
+
+function ResponsiveCamera({ isCameraResetting }: { isCameraResetting?: boolean }) {
+    const { camera, size } = useThree();
+    useEffect(() => {
+        if (isCameraResetting) return;
+        const isMobile = size.width < 768;
+        const targetZ = isMobile ? 2.85 : 2.2;
+        const targetFov = isMobile ? 58 : 55;
+        if (Math.abs(camera.position.z - targetZ) > 0.05 || (camera as THREE.PerspectiveCamera).fov !== targetFov) {
+            camera.position.z = targetZ;
+            (camera as THREE.PerspectiveCamera).fov = targetFov;
+            camera.updateProjectionMatrix();
+        }
+    }, [camera, size.width, isCameraResetting]);
+    return null;
+}
+
+function WinColorOverlay() {
+    return (
+        <div style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 1,
+            overflow: 'hidden',
+        }}>
+            {/* Elegant low-intensity animated ambient aurora waves */}
+            <div style={{
+                position: 'absolute',
+                top: '-10%',
+                left: '-15%',
+                width: '80%',
+                height: '80%',
+                background: 'radial-gradient(circle at center, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.04) 50%, transparent 70%)',
+                filter: 'blur(50px)',
+                animation: 'auroraFloat1 8s infinite alternate ease-in-out',
+            }} />
+            <div style={{
+                position: 'absolute',
+                bottom: '-15%',
+                right: '-10%',
+                width: '80%',
+                height: '80%',
+                background: 'radial-gradient(circle at center, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.03) 50%, transparent 70%)',
+                filter: 'blur(50px)',
+                animation: 'auroraFloat2 10s infinite alternate ease-in-out',
+            }} />
+
+            {/* Subtle, delicate floating light dust motes */}
+            {Array.from({ length: 10 }).map((_, i) => {
+                const left = `${(i * 23 + 11) % 86 + 7}%`;
+                const top = `${(i * 29 + 17) % 80 + 10}%`;
+                const color = i % 2 === 0 ? '#10b981' : '#f59e0b';
+                const size = (i % 2) + 2;
+                return (
+                    <div
+                        key={i}
+                        style={{
+                            position: 'absolute',
+                            left,
+                            top,
+                            width: `${size}px`,
+                            height: `${size}px`,
+                            borderRadius: '50%',
+                            background: color,
+                            boxShadow: `0 0 8px ${color}`,
+                            opacity: 0.38,
+                            animation: `winFloat ${3 + (i % 3)}s infinite alternate ease-in-out`,
+                            animationDelay: `${i * 0.3}s`,
+                        }}
+                    />
+                );
+            })}
+        </div>
+    );
+}
 
 /* ─── Coin Arc ───────────────────────────────────────────────────────────── */
 function CoinArc({ visible }: { visible: boolean }) {
@@ -112,6 +189,18 @@ export default function GamePage() {
             });
     }, [router, toast]);
 
+    useEffect(() => {
+        if (!mounted) return;
+        const origOverflow = document.body.style.overflow;
+        const origTouchAction = document.body.style.touchAction;
+        document.body.style.overflow = 'hidden';
+        document.body.style.touchAction = 'none';
+        return () => {
+            document.body.style.overflow = origOverflow || '';
+            document.body.style.touchAction = origTouchAction || '';
+        };
+    }, [mounted]);
+
     /* ── PLAY button handler ───────────────────────────────────────────────
        1. API call fires immediately on PLAY click (deduct 3 coins, get outcome)
        2. Coin arc animation plays during the ~300ms network round-trip
@@ -185,6 +274,7 @@ export default function GamePage() {
                         soundManager.playLoss();
                     } else {
                         soundManager.playWin(outcome === 'GUARANTEED');
+                        ref.current?.setWinColorMode?.(true);
                     }
                 }
             );
@@ -205,6 +295,7 @@ export default function GamePage() {
         pendingOutcomeRef.current = null;
         setPhase('intro');
         ref.current?.closeReveal();
+        ref.current?.setWinColorMode?.(false);
     }, []);
 
     /* ── Share on X ──────────────────────────────────────────────────────── */
@@ -245,7 +336,23 @@ export default function GamePage() {
                 * { box-sizing: border-box; margin: 0; padding: 0; }
             `}</style>
 
-            <Box position="relative" w="100vw" h="100vh" overflow="hidden" bg="#10170e">
+            <Box
+                position="fixed"
+                top="0"
+                left="0"
+                right="0"
+                bottom="0"
+                w="100%"
+                h="100%"
+                overflow="hidden"
+                bg="#10170e"
+                style={{
+                    touchAction: 'none',
+                    overscrollBehavior: 'none',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                }}
+            >
 
                 {/* Subtle deep vignette — monochrome only */}
                 <Box
@@ -257,7 +364,17 @@ export default function GamePage() {
                 <CoinArc visible={coinArcVisible} />
 
                 {/* ── 3D Canvas ─────────────────────────────────────────── */}
-                <Canvas shadows camera={{ position: [0, 2.1, 2.2], fov: 55 }}>
+                <Canvas
+                    shadows
+                    camera={{ position: [0, 2.1, 2.2], fov: 55 }}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        touchAction: 'none',
+                        outline: 'none',
+                    }}
+                >
+                    <ResponsiveCamera isCameraResetting={phase === 'revealing'} />
                     <Scene ref={ref} setIsLoading={setIsLoading} setProgress={setProgress} />
                 </Canvas>
 
@@ -270,39 +387,11 @@ export default function GamePage() {
                 </Modal>
 
                 {/* ── HUD: top bar ──────────────────────────────────────── */}
-                <div style={{
-                    position: 'absolute',
-                    top: 0, left: 0, right: 0,
-                    zIndex: 10,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '20px 24px',
-                    background: 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%)',
-                    pointerEvents: 'none',
-                }}>
+                <div className="hud-container">
                     {/* Monochrome Game Vibe Dashboard Home button */}
                     <button
                         onClick={() => router.push('/')}
-                        style={{
-                            pointerEvents: 'auto',
-                            background: 'rgba(15, 15, 18, 0.85)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: '9999px',
-                            color: '#ffffff',
-                            fontFamily: 'var(--font-pixel)',
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            letterSpacing: '0.15em',
-                            padding: '10px 18px',
-                            cursor: 'pointer',
-                            backdropFilter: 'blur(12px)',
-                            boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
-                            transition: 'all 0.15s ease',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                        }}
+                        className="hud-btn-dashboard"
                         onMouseEnter={e => {
                             e.currentTarget.style.borderColor = '#edc75b';
                             e.currentTarget.style.color = '#edc75b';
@@ -312,37 +401,20 @@ export default function GamePage() {
                             e.currentTarget.style.color = '#ffffff';
                         }}
                     >
-                        ← DASHBOARD
+                        <span className="desktop-dash-text">← DASHBOARD</span>
+                        <span className="mobile-dash-text">← DASH</span>
                     </button>
 
                     {/* BLNK brand */}
-                    <div style={{
-                        fontFamily: 'var(--font-pixel)',
-                        fontWeight: 900,
-                        fontSize: '18px',
-                        letterSpacing: '0.35em',
-                        color: '#edc75b',
-                        textShadow: '0 0 15px rgba(237, 199, 91, 0.5)',
-                        textTransform: 'uppercase',
-                        pointerEvents: 'none',
-                    }}>
+                    <div className="hud-brand">
                         BLNK
                     </div>
 
                     {/* Right Side: Sound Button + Monochrome Gold Coins Badge */}
-                    <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="hud-right">
                         <SoundButton />
-                        <div style={{
-                            background: 'rgba(15, 15, 18, 0.85)',
-                            border: '1px solid rgba(237, 199, 91, 0.35)',
-                            borderRadius: '9999px',
-                            padding: '10px 18px',
-                            backdropFilter: 'blur(12px)',
-                            boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
-                            display: 'flex',
-                            alignItems: 'center',
-                        }}>
-                            <span style={{
+                        <div className="hud-coins-badge">
+                            <span className="hud-coins-text" style={{
                                 fontFamily: 'var(--font-pixel)',
                                 fontSize: '10px',
                                 fontWeight: 700,
@@ -515,48 +587,65 @@ export default function GamePage() {
                         position: 'absolute',
                         inset: 0,
                         zIndex: 30,
-                        background: 'rgba(0,0,0,0.88)',
-                        backdropFilter: 'blur(20px)',
+                        background: 'rgba(8, 12, 10, 0.88)',
+                        backdropFilter: 'blur(12px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         padding: '24px',
                         animation: 'fadeUp 0.4s ease both',
                     }}>
+                        {outcomeCard.isWin && <WinColorOverlay />}
                         <div style={{
+                            position: 'relative',
+                            zIndex: 10,
                             width: '100%',
                             maxWidth: '380px',
-                            background: 'rgba(255,255,255,0.03)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '20px',
-                            padding: '36px 28px',
+                            background: 'linear-gradient(145deg, rgba(20, 24, 21, 0.96) 0%, rgba(10, 14, 11, 0.96) 100%)',
+                            border: '1px solid rgba(74, 222, 128, 0.35)',
+                            borderRadius: '24px',
+                            padding: '40px 32px',
                             textAlign: 'center',
-                            boxShadow: '0 0 80px rgba(255,255,255,0.04)',
+                            boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 50px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
+                            animation: outcomeCard.isWin ? 'cardPulseBorder 4s infinite ease-in-out' : 'none',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '20px',
+                            gap: '22px',
                         }}>
                             {outcomeCard.isWin ? (
                                 <>
-                                    <div style={{ fontFamily: 'monospace', fontSize: '9px', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>
-                                        REWARD UNLOCKED
+                                    <div style={{
+                                        fontFamily: 'monospace', fontSize: '10px', letterSpacing: '0.3em',
+                                        color: '#4ade80', textTransform: 'uppercase', fontWeight: 700,
+                                        textShadow: '0 0 12px rgba(74, 222, 128, 0.5)',
+                                    }}>
+                                        ✦ REWARD UNLOCKED ✦
                                     </div>
-                                    <div style={{ fontFamily: 'monospace', fontSize: '28px', fontWeight: 900, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                                    <div style={{
+                                        fontFamily: 'monospace', fontSize: '32px', fontWeight: 900,
+                                        color: '#ffffff', letterSpacing: '0.08em', textTransform: 'uppercase',
+                                        textShadow: '0 2px 15px rgba(74, 222, 128, 0.35)',
+                                    }}>
                                         {outcomeCard.outcome}
                                     </div>
-                                    <div style={{ fontFamily: 'monospace', fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, letterSpacing: '0.05em' }}>
-                                        You have extracted a rare whitelist spot from the machine. Post on X to claim.
+                                    <div style={{
+                                        fontFamily: 'monospace', fontSize: '13px', color: '#e5e7eb',
+                                        lineHeight: 1.65, letterSpacing: '0.03em', fontWeight: 500,
+                                    }}>
+                                        You have extracted a rare whitelist spot from the machine.
+                                        <br />Post on X to claim your reward.
                                     </div>
                                     <button
                                         onClick={shareOnX}
                                         style={{
-                                            width: '100%', padding: '16px', borderRadius: '12px',
-                                            border: '1px solid rgba(255,255,255,0.2)',
-                                            background: 'rgba(255,255,255,0.08)',
-                                            color: '#fff', fontFamily: 'monospace', fontSize: '12px',
-                                            fontWeight: 800, letterSpacing: '0.18em', cursor: 'pointer',
+                                            width: '100%', padding: '16px', borderRadius: '14px',
+                                            border: '1px solid rgba(74, 222, 128, 0.5)',
+                                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                            color: '#ffffff', fontFamily: 'monospace', fontSize: '13px',
+                                            fontWeight: 800, letterSpacing: '0.15em', cursor: 'pointer',
                                             textTransform: 'uppercase',
-                                            transition: 'background 0.2s',
+                                            boxShadow: '0 8px 25px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+                                            transition: 'all 0.2s ease',
                                         }}
                                     >
                                         POST ON X TO CLAIM
@@ -564,11 +653,12 @@ export default function GamePage() {
                                     <button
                                         onClick={handleClose}
                                         style={{
-                                            width: '100%', padding: '12px', borderRadius: '12px',
-                                            border: 'none', background: 'transparent',
-                                            color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace',
-                                            fontSize: '11px', letterSpacing: '0.12em', cursor: 'pointer',
-                                            textTransform: 'uppercase',
+                                            width: '100%', padding: '14px', borderRadius: '12px',
+                                            border: '1px solid rgba(255,255,255,0.12)',
+                                            background: 'rgba(255,255,255,0.04)',
+                                            color: '#d1d5db', fontFamily: 'monospace',
+                                            fontSize: '11px', letterSpacing: '0.15em', cursor: 'pointer',
+                                            textTransform: 'uppercase', fontWeight: 600,
                                         }}
                                     >
                                         ← RETURN TO MACHINE
@@ -605,6 +695,123 @@ export default function GamePage() {
                     </div>
                 )}
             </Box>
+            <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes winPulse {
+                    0% { transform: scale(1); opacity: 0.8; }
+                    100% { transform: scale(1.1); opacity: 1; }
+                }
+                @keyframes auroraFloat1 {
+                    0% { transform: scale(1) translate(-5%, -5%); opacity: 0.12; }
+                    50% { transform: scale(1.1) translate(5%, 10%); opacity: 0.18; }
+                    100% { transform: scale(1.05) translate(10%, -5%); opacity: 0.15; }
+                }
+                @keyframes auroraFloat2 {
+                    0% { transform: scale(1.05) translate(5%, 5%); opacity: 0.10; }
+                    50% { transform: scale(1.15) translate(-10%, -5%); opacity: 0.16; }
+                    100% { transform: scale(1) translate(-5%, 5%); opacity: 0.12; }
+                }
+                @keyframes cardPulseBorder {
+                    0% { border-color: rgba(74, 222, 128, 0.3); box-shadow: 0 30px 80px rgba(0,0,0,0.9), 0 0 30px rgba(16, 185, 129, 0.1); }
+                    50% { border-color: rgba(74, 222, 128, 0.65); box-shadow: 0 30px 80px rgba(0,0,0,0.95), 0 0 55px rgba(16, 185, 129, 0.22); }
+                    100% { border-color: rgba(74, 222, 128, 0.3); box-shadow: 0 30px 80px rgba(0,0,0,0.9), 0 0 30px rgba(16, 185, 129, 0.1); }
+                }
+                @keyframes winFloat {
+                    0% { transform: translateY(0px) scale(0.9); opacity: 0.25; }
+                    100% { transform: translateY(-25px) scale(1.2); opacity: 0.45; }
+                }
+                .hud-container {
+                    position: absolute;
+                    top: 0; left: 0; right: 0;
+                    z-index: 10;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 18px 24px;
+                    background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
+                    pointer-events: none;
+                }
+                .hud-btn-dashboard {
+                    pointer-events: auto;
+                    background: rgba(15, 15, 18, 0.85);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    border-radius: 9999px;
+                    color: #ffffff;
+                    font-family: var(--font-pixel);
+                    font-size: 10px;
+                    font-weight: 700;
+                    letter-spacing: 0.15em;
+                    padding: 10px 18px;
+                    cursor: pointer;
+                    backdrop-filter: blur(12px);
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                    transition: all 0.15s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    white-space: nowrap;
+                }
+                .hud-brand {
+                    font-family: var(--font-pixel);
+                    font-weight: 900;
+                    font-size: 18px;
+                    letter-spacing: 0.35em;
+                    color: #edc75b;
+                    text-shadow: 0 0 15px rgba(237, 199, 91, 0.5);
+                    text-transform: uppercase;
+                    pointer-events: none;
+                    text-align: center;
+                    flex-shrink: 0;
+                    margin: 0 8px;
+                }
+                .hud-right {
+                    pointer-events: auto;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    flex-shrink: 0;
+                }
+                .hud-coins-badge {
+                    background: rgba(15, 15, 18, 0.85);
+                    border: 1px solid rgba(237, 199, 91, 0.35);
+                    border-radius: 9999px;
+                    padding: 10px 18px;
+                    backdrop-filter: blur(12px);
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                    display: flex;
+                    align-items: center;
+                    white-space: nowrap;
+                }
+                .desktop-dash-text { display: inline; }
+                .mobile-dash-text { display: none; }
+                @media (max-width: 640px) {
+                    .hud-container {
+                        padding: 12px 10px !important;
+                    }
+                    .hud-btn-dashboard {
+                        padding: 7px 10px !important;
+                        font-size: 8px !important;
+                        letter-spacing: 0.08em !important;
+                        gap: 4px !important;
+                    }
+                    .hud-brand {
+                        font-size: 14px !important;
+                        letter-spacing: 0.18em !important;
+                        margin: 0 4px !important;
+                    }
+                    .hud-right {
+                        gap: 6px !important;
+                    }
+                    .hud-coins-badge {
+                        padding: 7px 10px !important;
+                    }
+                    .hud-coins-text {
+                        font-size: 8px !important;
+                        letter-spacing: 0.08em !important;
+                    }
+                    .desktop-dash-text { display: none !important; }
+                    .mobile-dash-text { display: inline !important; }
+                }
+            ` }} />
         </>
     );
 }

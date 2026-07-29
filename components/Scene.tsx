@@ -348,6 +348,9 @@ const Scene: ForwardRefRenderFunction<
         const applyGrayscale = (object: any) => {
             object.traverse((child: any) => {
                 if (child.isMesh && child.material && child.material.color) {
+                    if (!child.material.userData.originalColor) {
+                        child.material.userData.originalColor = child.material.color.clone();
+                    }
                     const hsl = { h: 0, s: 0, l: 0 };
                     child.material.color.getHSL(hsl);
                     child.material.color.setHSL(hsl.h, 0, hsl.l);
@@ -370,7 +373,8 @@ const Scene: ForwardRefRenderFunction<
 
         // Camera return-to-home after reveal is closed
         if (isCameraResetting) {
-            const home = { x: 0, y: 2.1, z: 2.2 };
+            const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 768;
+            const home = { x: 0, y: 2.1, z: isMobileScreen ? 2.85 : 2.2 };
             state.camera.position.x = THREE.MathUtils.damp(state.camera.position.x, home.x, 5, delta);
             state.camera.position.y = THREE.MathUtils.damp(state.camera.position.y, home.y, 5, delta);
             state.camera.position.z = THREE.MathUtils.damp(state.camera.position.z, home.z, 5, delta);
@@ -608,14 +612,40 @@ const Scene: ForwardRefRenderFunction<
         setIsCameraResetting(true);
     }, [presentationCapsule, revealState]);
 
+    const setWinColorMode = useCallback((colored: boolean) => {
+        const applyMode = (object: any) => {
+            object.traverse((child: any) => {
+                if (child.isMesh && child.material && child.material.color && child.material.userData.originalColor) {
+                    if (colored) {
+                        child.material.color.copy(child.material.userData.originalColor);
+                    } else {
+                        const hsl = { h: 0, s: 0, l: 0 };
+                        child.material.color.getHSL(hsl);
+                        child.material.color.setHSL(hsl.h, 0, hsl.l);
+                    }
+                    child.material.needsUpdate = true;
+                }
+            });
+        };
+        applyMode(clawMachine.scene);
+        applyMode(clawRest.scene);
+        applyMode(clawRest1.scene);
+        applyMode(clawRest2.scene);
+        applyMode(clawRest3.scene);
+        applyMode(claw1.scene);
+        applyMode(claw2.scene);
+        applyMode(claw3.scene);
+    }, [clawMachine, clawRest, clawRest1, clawRest2, clawRest3, claw1, claw2, claw3]);
+
     useImperativeHandle(ref, () => ({
         onPick,
         onJoystick,
         startReveal,
         clickCapsule,
         closeReveal,
-        getRevealStep: () => revealState?.step
-    }), [onPick, onJoystick, startReveal, clickCapsule, closeReveal, revealState]);
+        getRevealStep: () => revealState?.step,
+        setWinColorMode
+    }), [onPick, onJoystick, startReveal, clickCapsule, closeReveal, revealState, setWinColorMode]);
 
     return (
         <>

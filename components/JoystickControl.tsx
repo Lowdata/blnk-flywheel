@@ -28,6 +28,8 @@ const JoystickControl: FC<{
 
     const handleStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         if (disabled) return;
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
         setIsDragging(true);
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -36,6 +38,7 @@ const JoystickControl: FC<{
 
     const handleMove = useCallback((e: MouseEvent | TouchEvent) => {
         if (!isDragging) return;
+        if (e.cancelable) e.preventDefault();
         const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
         const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
         updatePos(clientX, clientY);
@@ -48,11 +51,23 @@ const JoystickControl: FC<{
     }, [onJoystick]);
 
     useEffect(() => {
+        const preventTouchScroll = (e: TouchEvent) => {
+            if (e.cancelable) e.preventDefault();
+        };
+        const el = baseRef.current;
+        if (el) {
+            el.addEventListener('touchstart', preventTouchScroll, { passive: false });
+            el.addEventListener('touchmove', preventTouchScroll, { passive: false });
+        }
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', handleEnd);
         window.addEventListener('touchmove', handleMove, { passive: false });
         window.addEventListener('touchend', handleEnd);
         return () => {
+            if (el) {
+                el.removeEventListener('touchstart', preventTouchScroll);
+                el.removeEventListener('touchmove', preventTouchScroll);
+            }
             window.removeEventListener('mousemove', handleMove);
             window.removeEventListener('mouseup', handleEnd);
             window.removeEventListener('touchmove', handleMove);
@@ -70,6 +85,9 @@ const JoystickControl: FC<{
             flexDirection: 'column',
             alignItems: 'center',
             gap: '8px',
+            touchAction: 'none',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
         }}>
             <span style={{
                 fontFamily: 'var(--font-pixel)',
@@ -94,6 +112,8 @@ const JoystickControl: FC<{
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     position: 'relative',
                     userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    touchAction: 'none',
                     background: 'radial-gradient(circle at 35% 35%, #2a2a2e 0%, #111113 70%, #080809 100%)',
                     border: '4px solid #3f3f46',
                     boxShadow: `

@@ -99,7 +99,7 @@ export default function Dashboard() {
   }
 
   return (
-    <Box minH="100vh" bg="#060d08" color="white" position="relative" overflowX="hidden" pb={20}>
+    <Box minH="100vh" w="100%" bg="#060d08" color="white" position="relative" pb={20} style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', overflowY: 'auto', overscrollBehaviorY: 'auto' }}>
       {/* Old CRT Monochrome Phosphor Green Scanline / Grid Background */}
       <Box
         position="absolute"

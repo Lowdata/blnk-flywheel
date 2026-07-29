@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { taskId } = await request.json();
+    const { taskId, data } = await request.json();
     const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
 
     if (!session.siwe) {
@@ -27,32 +27,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: 'Task not found' }, { status: 404 });
     }
 
-    const isAlreadyCompleted = user.completedTasks.some(
-      (id: any) => (id._id || id).toString() === task._id.toString()
+    // Atomic update prevents concurrent requests from duplicate coin awards
+    const updateOp: any = {
+      $inc: { coins: task.rewardAmount },
+      $addToSet: { completedTasks: task._id },
+    };
+    if (task.taskId === 'twitter_connect') {
+      let handle = data?.username || '@BLNK_Member';
+      if (!handle.startsWith('@')) handle = '@' + handle;
+      
+      updateOp.$set = {
+        twitterLinked: true,
+        twitterHandle: handle,
+      };
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        walletAddress: session.siwe.address,
+        completedTasks: { $ne: task._id },
+      },
+      updateOp,
+      { new: true }
     );
 
-    if (isAlreadyCompleted) {
+    if (!updatedUser) {
+      const currentUser = await User.findOne({ walletAddress: session.siwe.address });
       return NextResponse.json({
         ok: true,
         message: 'Task already completed',
-        coins: user.coins,
+        coins: currentUser ? currentUser.coins : 0,
         completedTaskId: task._id,
         alreadyCompleted: true,
       });
     }
 
-    // Give reward
-    user.coins += task.rewardAmount;
-    if (!isAlreadyCompleted) {
-      user.completedTasks.push(task._id as any);
-    }
-    if (task.taskId === 'twitter_connect' && !user.twitterLinked) {
-      user.twitterLinked = true;
-      if (!user.twitterHandle) user.twitterHandle = '@BLNK_Member';
-    }
-    await user.save();
-
-    return NextResponse.json({ ok: true, coins: user.coins, completedTaskId: task._id });
+    return NextResponse.json({ ok: true, coins: updatedUser.coins, completedTaskId: task._id });
   } catch (e: any) {
     return NextResponse.json({ ok: false, message: e.message }, { status: 500 });
   }

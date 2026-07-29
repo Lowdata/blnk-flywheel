@@ -6,6 +6,7 @@ import dbConnect from '@/lib/mongodb';
 import { User } from '@/models/User';
 import '@/models/Task'; // Import to register schema
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
         nonce: session.nonce,
       });
     } catch (siweErr: any) {
-      return NextResponse.json({ ok: false, message: siweErr.message || 'SIWE Verification failed' }, { status: 422 });
+      return NextResponse.json({ ok: false, message: 'SIWE Verification failed' }, { status: 422 });
     }
 
     const { data: fields, success, error } = verifyResult;
@@ -38,27 +39,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: 'Invalid nonce.' }, { status: 422 });
     }
 
+    // Save SIWE address and clear nonce after successful verification
     session.siwe = {
       address: fields.address,
       chainId: fields.chainId,
     };
+    session.nonce = undefined;
     await session.save();
 
     await dbConnect();
     
-    // Create or update user
+    // Create or update user with retry for unique referralCode collision
     let user = await User.findOne({ walletAddress: fields.address });
     if (!user) {
-      user = await User.create({
-        walletAddress: fields.address,
-        nonce: fields.nonce,
-        coins: 10, // Give starting coins for testing
-      });
+      let created = false;
+      let attempts = 0;
+      while (!created && attempts < 3) {
+        try {
+          user = await User.create({
+            walletAddress: fields.address,
+            nonce: fields.nonce,
+            coins: 0, // Economy P1 fix: Start with 0 coins
+            referralCode: crypto.randomBytes(4).toString('hex').toUpperCase(),
+          });
+          created = true;
+        } catch (err: any) {
+          if (err.code === 11000 && err.keyPattern?.referralCode) {
+            attempts++;
+            continue;
+          }
+          throw err;
+        }
+      }
     }
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    console.error('[AUTH ERROR] in verify route:', e);
-    return NextResponse.json({ ok: false, message: e.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ ok: false, message: 'Internal Server Error' }, { status: 500 });
   }
 }

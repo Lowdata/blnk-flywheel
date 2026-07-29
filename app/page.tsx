@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Button, Flex, Heading, Text, VStack, HStack, SimpleGrid, useToast } from '@chakra-ui/react';
+import { Box, Button, Flex, Heading, Text, VStack, HStack, SimpleGrid, useToast, Input } from '@chakra-ui/react';
 import { BrowserProvider, getAddress } from 'ethers';
 import { SiweMessage } from 'siwe';
 import { useRouter } from 'next/navigation';
 import SpotlightCard from '@/components/SpotlightCard';
 import SoundButton from '@/components/SoundButton';
+import OnboardingModal from '@/components/OnboardingModal';
 import { soundManager } from '@/lib/sound';
 
 declare global {
@@ -21,8 +22,19 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<any[]>([]);
   const [verifyingTasks, setVerifyingTasks] = useState<{ [taskId: string]: number }>({});
+  const [inviteCodeInput, setInviteCodeInput] = useState('');
+  const [claimingInvite, setClaimingInvite] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const toast = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user || !user.twitterLinked) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [loading, user]);
 
   const fetchUser = async () => {
     try {
@@ -180,6 +192,81 @@ export default function Dashboard() {
     }
   };
 
+  const handleLogout = async () => {
+    soundManager.playClick();
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+      setAddress(null);
+      setTasks([]);
+      toast({ title: 'Disconnected', status: 'info', duration: 2000 });
+    } catch (e) {
+      toast({ title: 'Logout failed', status: 'error' });
+    }
+  };
+
+  const handleLinkTwitterModal = async (username: string): Promise<boolean> => {
+    soundManager.playClick();
+    try {
+      const res = await fetch('/api/tasks/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: 'twitter_connect', data: { username } }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        soundManager.playWin();
+        toast({
+          title: 'Twitter Linked! +10 Coins',
+          status: 'success',
+          duration: 3000,
+        });
+        await fetchUser();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      toast({ title: 'Failed to link Twitter', status: 'error' });
+      return false;
+    }
+  };
+
+  const handleClaimCardInvite = async () => {
+    if (!inviteCodeInput.trim()) return;
+    setClaimingInvite(true);
+    soundManager.playClick();
+    try {
+      const res = await fetch('/api/referral/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referralCode: inviteCodeInput.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        soundManager.playWin();
+        toast({
+          title: 'Referral Applied!',
+          description: data.message || 'You earned +15 COINS welcome bonus.',
+          status: 'success',
+          duration: 4000,
+        });
+        setInviteCodeInput('');
+        await fetchUser();
+      } else {
+        toast({
+          title: 'Cannot Apply Code',
+          description: data.message || 'Invalid code or already applied.',
+          status: 'error',
+          duration: 3000,
+        });
+      }
+    } catch (e) {
+      toast({ title: 'Failed to claim referral code', status: 'error' });
+    } finally {
+      setClaimingInvite(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box minH="100vh" bg="#060d08" color="white" display="flex" alignItems="center" justifyContent="center">
@@ -228,24 +315,42 @@ export default function Dashboard() {
             </Box>
           </HStack>
 
-          <HStack gap={4}>
+          <HStack gap={{ base: 2, md: 4 }}>
             <SoundButton />
             {address && (
-              <Button
-                size="sm"
-                className="pixel-button"
-                fontFamily="var(--font-pixel)"
-                fontSize="xs"
-                px={4}
-                h="36px"
-                rounded="none"
-                onClick={() => {
-                  soundManager.playClick();
-                  router.push('/game');
-                }}
-              >
-                🎮 PLAY GAME
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  className="pixel-button"
+                  fontFamily="var(--font-pixel)"
+                  fontSize="xs"
+                  px={4}
+                  h="36px"
+                  rounded="none"
+                  onClick={() => {
+                    soundManager.playClick();
+                    router.push('/game');
+                  }}
+                >
+                  🎮 PLAY GAME
+                </Button>
+                <Button
+                  size="sm"
+                  bg="transparent"
+                  border="1px solid"
+                  borderColor="red.800"
+                  color="red.400"
+                  fontFamily="var(--font-pixel)"
+                  fontSize={{ base: '2xs', md: 'xs' }}
+                  px={3}
+                  h="36px"
+                  rounded="none"
+                  _hover={{ bg: 'red.900', borderColor: 'red.600' }}
+                  onClick={handleLogout}
+                >
+                  ⏻
+                </Button>
+              </>
             )}
           </HStack>
         </Flex>
@@ -459,9 +564,20 @@ export default function Dashboard() {
                 
                 <VStack gap={3.5} w="full" align="stretch">
                   {tasks.length === 0 ? (
-                    <Text color="green.300" fontFamily="var(--font-retro)" fontSize="lg">
-                      Loading tasks from DB...
-                    </Text>
+                    <VStack gap={3.5} w="full" align="stretch">
+                      {[1, 2, 3].map((i) => (
+                        <Box key={i} p={3.5} bg="#050a06" border="2px solid #166534">
+                          <HStack gap={3}>
+                            <Box w="24px" h="24px" bg="#14532d" borderRadius="full" className="animate-pulse" />
+                            <VStack align="start" gap={1} flex={1}>
+                              <Box w="60%" h="16px" bg="#14532d" className="animate-pulse" />
+                              <Box w="30%" h="10px" bg="#0f2416" className="animate-pulse" />
+                            </VStack>
+                            <Box w="40px" h="24px" bg="#14532d" className="animate-pulse" />
+                          </HStack>
+                        </Box>
+                      ))}
+                    </VStack>
                   ) : (
                     tasks.map((task) => {
                       const isCompleted = user?.completedTasks?.some(
@@ -576,7 +692,7 @@ export default function Dashboard() {
                 </VStack>
               </SpotlightCard>
 
-              {/* Referrals Card */}
+              {/* Referrals Card - Arcade Cyberpunk Terminal Aesthetic */}
               <SpotlightCard
                 p={6}
                 spotlightColor="rgba(245, 158, 11, 0.35)"
@@ -586,20 +702,104 @@ export default function Dashboard() {
                 boxShadow="0 3px 0 #050a06"
                 rounded="none"
               >
-                <HStack mb={2}>
-                  <Text color="yellow.400" fontFamily="var(--font-pixel)" fontSize="xs">📜</Text>
-                  <Heading size="xs" fontFamily="var(--font-pixel)" color="yellow.400">REFERRALS</Heading>
-                </HStack>
-                <Text color="green.100" fontFamily="var(--font-retro)" fontSize="xl" mb={6}>
-                  Invite friends to earn additional color drops and chances.
-                </Text>
-                
-                <Box p={4} bg="#0f2416" border="2px solid" borderColor="#166534" textAlign="center">
-                  <Text color="green.300" fontSize="xs" fontFamily="var(--font-pixel)" mb={2} textTransform="uppercase">YOUR INVITE CODE</Text>
-                  <Text fontWeight="black" fontSize="2xl" fontFamily="var(--font-pixel)" color="yellow.300" letterSpacing="widest">
-                    {user?.referralCode || '------'}
+                <VStack align="stretch" gap={5}>
+                  <Flex justify="space-between" align="center">
+                    <HStack>
+                      <Text color="yellow.400" fontFamily="var(--font-pixel)" fontSize="xs">📜</Text>
+                      <Heading size="xs" fontFamily="var(--font-pixel)" color="yellow.400">REFERRAL SYSTEM</Heading>
+                    </HStack>
+                    <Box px={2} py={0.5} bg="#713f12" border="1px solid #eab308">
+                      <Text fontFamily="var(--font-pixel)" fontSize="3xs" color="yellow.200">
+                        +30 COINS / INVITE
+                      </Text>
+                    </Box>
+                  </Flex>
+
+                  <Text color="green.100" fontFamily="var(--font-retro)" fontSize="lg">
+                    Invite friends to expand your Whitelist Flywheel chances.
                   </Text>
-                </Box>
+                
+                  {/* Your Invite Code display with action buttons */}
+                  <Box p={4} bg="#0f2416" border="2px solid" borderColor="#166534" textAlign="center" position="relative">
+                    <Text color="green.300" fontSize="3xs" fontFamily="var(--font-pixel)" mb={2} textTransform="uppercase">
+                      YOUR EXCLUSIVE INVITE CODE
+                    </Text>
+                    <Text fontWeight="black" fontSize="2xl" fontFamily="var(--font-pixel)" color="yellow.300" letterSpacing="widest" mb={3}>
+                      {user?.referralCode || '------'}
+                    </Text>
+                    <HStack justify="center" gap={3}>
+                      <Button
+                        size="xs"
+                        bg="#22c55e"
+                        color="black"
+                        fontFamily="var(--font-pixel)"
+                        fontSize="3xs"
+                        px={4}
+                        _hover={{ bg: '#4ade80' }}
+                        onClick={() => {
+                          if (!user?.referralCode) return;
+                          navigator.clipboard.writeText(user.referralCode);
+                          soundManager.playClick();
+                          toast({ title: 'Code copied to clipboard!', status: 'success', duration: 2000 });
+                        }}
+                      >
+                        COPY CODE
+                      </Button>
+                      <Button
+                        size="xs"
+                        bg="#14532d"
+                        color="green.200"
+                        border="1px solid #22c55e"
+                        fontFamily="var(--font-pixel)"
+                        fontSize="3xs"
+                        px={4}
+                        _hover={{ bg: '#166534' }}
+                        onClick={() => {
+                          if (!user?.referralCode) return;
+                          const url = `${window.location.origin}/?ref=${user.referralCode}`;
+                          navigator.clipboard.writeText(url);
+                          soundManager.playClick();
+                          toast({ title: 'Invite link copied!', status: 'success', duration: 2000 });
+                        }}
+                      >
+                        SHARE LINK
+                      </Button>
+                    </HStack>
+                  </Box>
+
+                  {/* Live Referral Stats HUD */}
+                  <SimpleGrid columns={2} gap={3}>
+                    <Box p={3} bg="#05130a" border="1px solid #166534" textAlign="center">
+                      <Text color="gray.400" fontFamily="var(--font-pixel)" fontSize="3xs" mb={1}>
+                        TOTAL REFERRED
+                      </Text>
+                      <Text color="green.400" fontFamily="var(--font-pixel)" fontSize="md">
+                        {user?.referrals?.length || 0}
+                      </Text>
+                    </Box>
+                    <Box p={3} bg="#05130a" border="1px solid #166534" textAlign="center">
+                      <Text color="gray.400" fontFamily="var(--font-pixel)" fontSize="3xs" mb={1}>
+                        COINS EARNED
+                      </Text>
+                      <Text color="yellow.400" fontFamily="var(--font-pixel)" fontSize="md">
+                        {(user?.referrals?.length || 0) * 30}
+                      </Text>
+                    </Box>
+                  </SimpleGrid>
+
+
+                  {/* How It Works Guide */}
+                  <Box pt={2} borderTop="1px solid #166534">
+                    <Text color="yellow.400" fontFamily="var(--font-pixel)" fontSize="3xs" mb={2}>
+                      HOW IT WORKS
+                    </Text>
+                    <VStack align="stretch" gap={1.5} color="gray.300" fontFamily="var(--font-mono)" fontSize="xs">
+                      <Text>• Share your code with fellow collectors</Text>
+                      <Text>• Friend receives +15 COINS welcome bonus</Text>
+                      <Text>• You earn +30 COINS automatically on claim</Text>
+                    </VStack>
+                  </Box>
+                </VStack>
               </SpotlightCard>
             </SimpleGrid>
 
@@ -625,6 +825,16 @@ export default function Dashboard() {
           </VStack>
         )}
       </VStack>
+
+      {/* Onboarding Modal Protocol (Wallet -> Twitter -> Invite Code) */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        user={user}
+        onConnectWallet={connectWallet}
+        onLinkTwitter={handleLinkTwitterModal}
+        onRefreshUser={fetchUser}
+      />
     </Box>
   );
 }

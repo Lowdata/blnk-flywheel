@@ -14,12 +14,12 @@ const COINS_PER_PLAY = 3;
  * Edge and server runtimes — no Math.random() for game outcomes.
  */
 function secureRandom(): number {
-    const buf = new Uint32Array(1);
-    crypto.getRandomValues(buf);
-    return buf[0] / (0xFFFFFFFF + 1);
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return arr[0] / 0x100000000;
 }
 
-export async function POST() {
+export async function POST(request: Request) {
     try {
         const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
 
@@ -29,8 +29,9 @@ export async function POST() {
 
         const walletAddress: string = session.siwe.address;
 
-        // ── Anti-spam: rate limit per wallet ──────────────────────────────
-        if (!checkRateLimit(walletAddress)) {
+        // ── Anti-spam: rate limit per wallet (MongoDB backed) ─────────────
+        const allowed = await checkRateLimit(walletAddress);
+        if (!allowed) {
             return NextResponse.json(
                 { ok: false, message: 'Too many requests. Please wait before playing again.' },
                 { status: 429 }
@@ -51,21 +52,6 @@ export async function POST() {
             );
         }
 
-        // ── Atomic coin deduction ─────────────────────────────────────────
-        // findOneAndUpdate with $inc and a minimum check prevents race conditions
-        const updated = await User.findOneAndUpdate(
-            { walletAddress, coins: { $gte: COINS_PER_PLAY } },
-            { $inc: { coins: -COINS_PER_PLAY } },
-            { new: true }
-        );
-
-        if (!updated) {
-            return NextResponse.json(
-                { ok: false, message: 'Coin deduction failed. Please try again.' },
-                { status: 409 }
-            );
-        }
-
         // ── Server-side RNG (crypto — never Math.random) ──────────────────
         // Odds: GTD 5%, FCFS 30%, LOSS 65%
         const rand = secureRandom();
@@ -76,19 +62,30 @@ export async function POST() {
             outcome = 'FCFS';
         }
 
-        // Record win
+        // ── Single atomic update: Coin deduction + Reward creation ────────
+        const updateOp: any = {
+            $inc: { coins: -COINS_PER_PLAY }
+        };
         if (outcome !== 'LOSS') {
-            await User.updateOne(
-                { _id: updated._id },
-                {
-                    $push: {
-                        rewards: {
-                            type: outcome,
-                            claimed: false,
-                            createdAt: new Date(),
-                        },
-                    },
+            updateOp.$push = {
+                rewards: {
+                    type: outcome,
+                    claimed: false,
+                    createdAt: new Date(),
                 }
+            };
+        }
+
+        const updated = await User.findOneAndUpdate(
+            { walletAddress, coins: { $gte: COINS_PER_PLAY } },
+            updateOp,
+            { new: true }
+        );
+
+        if (!updated) {
+            return NextResponse.json(
+                { ok: false, message: 'Coin deduction failed. Please try again.' },
+                { status: 409 }
             );
         }
 
@@ -99,6 +96,9 @@ export async function POST() {
         });
     } catch (e: any) {
         console.error('[/api/game/play]', e);
-        return NextResponse.json({ ok: false, message: 'Internal server error' }, { status: 500 });
+        return NextResponse.json(
+            { ok: false, message: e.message || 'Internal error' },
+            { status: 500 }
+        );
     }
 }

@@ -410,7 +410,7 @@ export default function GamePage() {
                         BLNK
                     </div>
 
-                    {/* Right Side: Sound Button + Monochrome Gold Coins Badge */}
+                    {/* Right Side: Sound Button + Monochrome Gold Coins Badge + Logout */}
                     <div className="hud-right">
                         <SoundButton />
                         <div className="hud-coins-badge">
@@ -425,6 +425,16 @@ export default function GamePage() {
                                 ◈ {user?.coins ?? 0} COINS
                             </span>
                         </div>
+                        <button
+                            className="hud-logout-btn"
+                            onClick={async () => {
+                                await fetch('/api/auth/logout', { method: 'POST' });
+                                router.push('/');
+                            }}
+                            title="Disconnect wallet"
+                        >
+                            ⏻
+                        </button>
                     </div>
                 </div>
 
@@ -781,35 +791,59 @@ export default function GamePage() {
                     align-items: center;
                     white-space: nowrap;
                 }
+                .hud-logout-btn {
+                    pointer-events: auto;
+                    background: rgba(15, 15, 18, 0.85);
+                    border: 1px solid rgba(239, 68, 68, 0.35);
+                    border-radius: 9999px;
+                    color: #ef4444;
+                    font-family: var(--font-pixel);
+                    font-size: 12px;
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    backdrop-filter: blur(12px);
+                    transition: all 0.15s ease;
+                    display: flex;
+                    align-items: center;
+                }
+                .hud-logout-btn:hover {
+                    border-color: #ef4444;
+                    background: rgba(127, 29, 29, 0.5);
+                }
                 .desktop-dash-text { display: inline; }
                 .mobile-dash-text { display: none; }
                 @media (max-width: 640px) {
                     .hud-container {
-                        padding: 12px 10px !important;
+                        padding: 10px 8px !important;
+                        gap: 4px;
                     }
                     .hud-btn-dashboard {
-                        padding: 7px 10px !important;
-                        font-size: 8px !important;
-                        letter-spacing: 0.08em !important;
-                        gap: 4px !important;
+                        padding: 6px 8px !important;
+                        font-size: 7px !important;
+                        letter-spacing: 0.05em !important;
+                        gap: 3px !important;
                     }
                     .hud-brand {
-                        font-size: 14px !important;
-                        letter-spacing: 0.18em !important;
-                        margin: 0 4px !important;
+                        font-size: 12px !important;
+                        letter-spacing: 0.12em !important;
+                        margin: 0 2px !important;
                     }
                     .hud-right {
-                        gap: 6px !important;
+                        gap: 4px !important;
                     }
                     .hud-coins-badge {
-                        padding: 7px 10px !important;
+                        padding: 6px 8px !important;
                     }
                     .hud-coins-text {
-                        font-size: 8px !important;
-                        letter-spacing: 0.08em !important;
+                        font-size: 7px !important;
+                        letter-spacing: 0.05em !important;
                     }
                     .desktop-dash-text { display: none !important; }
                     .mobile-dash-text { display: inline !important; }
+                    .hud-logout-btn {
+                        font-size: 9px !important;
+                        padding: 5px 8px !important;
+                    }
                 }
             ` }} />
         </>

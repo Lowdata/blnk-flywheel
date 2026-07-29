@@ -1,4 +1,5 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
+import crypto from 'crypto';
 
 export interface IRewardItem {
   _id?: mongoose.Types.ObjectId;
@@ -14,6 +15,7 @@ export interface IUser extends Document {
   coins: number;
   referralCode: string;
   referredBy?: string;
+  referrals: mongoose.Types.ObjectId[];
   completedTasks: mongoose.Types.ObjectId[];
   rewards: IRewardItem[];
   twitterHandle?: string;
@@ -37,12 +39,13 @@ const UserSchema: Schema = new Schema(
     walletAddress: { type: String, required: true, unique: true },
     nonce: { type: String, required: true },
     coins: { type: Number, default: 0 },
-    referralCode: { 
-      type: String, 
+    referralCode: {
+      type: String,
       unique: true,
-      default: () => Math.random().toString(36).substring(2, 10).toUpperCase()
+      default: () => 'BLNK-' + crypto.randomBytes(3).toString('hex').toUpperCase(),
     },
     referredBy: { type: String },
+    referrals: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     completedTasks: [{ type: Schema.Types.ObjectId, ref: 'Task' }],
     rewards: { type: [RewardItemSchema], default: [] },
     twitterHandle: { type: String },

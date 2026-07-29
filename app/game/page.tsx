@@ -209,12 +209,7 @@ export default function GamePage() {
     const handlePlay = useCallback(async () => {
         if (phase !== 'intro' || !user) return;
         if ((user?.coins ?? 0) < 3) {
-            toast({
-                title: 'Not enough coins',
-                description: 'You need 3 coins to play.',
-                status: 'warning',
-                position: 'top',
-            });
+            router.push('/');
             return;
         }
         soundManager.playClick();
@@ -497,7 +492,7 @@ export default function GamePage() {
                                     e.currentTarget.style.transform = 'translateY(0px)';
                                 }}
                             >
-                                ▶ PLAY GAME
+                                {(user?.coins ?? 0) < 3 ? '▶ GET MORE COINS' : '▶ PLAY GAME'}
                             </button>
                             <div style={{
                                 background: 'rgba(10, 10, 14, 0.85)',
@@ -687,7 +682,13 @@ export default function GamePage() {
                                         <br />Refer friends for more coins and try again.
                                     </div>
                                     <button
-                                        onClick={handleClose}
+                                        onClick={() => {
+                                            if ((user?.coins ?? 0) < 3) {
+                                                router.push('/');
+                                            } else {
+                                                handleClose();
+                                            }
+                                        }}
                                         style={{
                                             width: '100%', padding: '16px', borderRadius: '12px',
                                             border: '1px solid rgba(255,255,255,0.12)',
@@ -697,7 +698,7 @@ export default function GamePage() {
                                             textTransform: 'uppercase',
                                         }}
                                     >
-                                        TRY AGAIN
+                                        {(user?.coins ?? 0) < 3 ? 'GET MORE COINS' : 'TRY AGAIN'}
                                     </button>
                                 </>
                             )}

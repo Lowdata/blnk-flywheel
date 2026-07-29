@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -39,6 +39,14 @@ export default function OnboardingModal({
   const [isClaiming, setIsClaiming] = useState(false);
   const [activeStep, setActiveStep] = useState<number>(!user ? 1 : !user.twitterLinked ? 2 : 3);
   const toast = useToast();
+
+  useEffect(() => {
+    if (isOpen) {
+      if (!user) setActiveStep(1);
+      else if (!user.twitterLinked) setActiveStep(2);
+      else setActiveStep(3);
+    }
+  }, [isOpen, user]);
 
   const handleClaimReferral = async () => {
     if (!referralInput.trim()) return;
@@ -177,7 +185,7 @@ export default function OnboardingModal({
             </Flex>
 
             {/* Step 1: Wallet Connect */}
-            {!user ? (
+            {activeStep === 1 && (
               <VStack
                 p={5}
                 bg="#030805"
@@ -186,7 +194,9 @@ export default function OnboardingModal({
                 gap={4}
                 textAlign="center"
               >
-                <Text fontSize="2xl">🛡️</Text>
+                <Icon viewBox="0 0 24 24" boxSize={8} color="green.400" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </Icon>
                 <VStack gap={1}>
                   <Text fontFamily="var(--font-retro)" fontSize="xl" color="white">
                     LINK CRYPTOGRAPHIC WALLET
@@ -202,13 +212,15 @@ export default function OnboardingModal({
                   fontFamily="var(--font-pixel)"
                   fontSize="2xs"
                   py={6}
-                  _hover={{ bg: '#4ade80', boxShadow: '0 0 15px rgba(74, 222, 128, 0.6)' }}
+                  _hover={{ bg: '#4ade80', boxShadow: '0 0 15px rgba(74, 222, 128, 0.4)' }}
                   onClick={onConnectWallet}
                 >
-                  CONNECT WALLET
+                  INITIALIZE SIWE CONNECTION
                 </Button>
               </VStack>
-            ) : !user.twitterLinked ? (
+            )}
+
+            {activeStep === 2 && (
               /* Step 2: Link Twitter */
               <VStack
                 p={5}
@@ -216,20 +228,22 @@ export default function OnboardingModal({
                 border="1px solid #166534"
                 align="stretch"
                 gap={4}
-                textAlign="center"
               >
-                <VStack gap={1}>
-                  <Text fontSize="2xl">🐦</Text>
+                <VStack gap={1} align="center" textAlign="center">
+                  <Icon viewBox="0 0 24 24" boxSize={8} color="#1da1f2" fill="currentColor">
+                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
+                  </Icon>
                   <Text fontFamily="var(--font-retro)" fontSize="xl" color="white">
-                    CONNECT SOCIAL IDENTITY
+                    LINK TWITTER
                   </Text>
                   <Text fontFamily="var(--font-mono)" fontSize="xs" color="gray.400">
-                    Link your Twitter profile to unlock tasks and earn +10 starting coins.
+                    Connect your X (Twitter) account to enable social tasks and claim +10 COINS.
                   </Text>
                 </VStack>
+                
                 <VStack gap={3}>
                   <Input
-                    placeholder="@username"
+                    placeholder="ENTER @USERNAME"
                     value={twitterUsername}
                     onChange={(e) => setTwitterUsername(e.target.value)}
                     bg="#05130a"
@@ -273,7 +287,9 @@ export default function OnboardingModal({
                   SKIP FOR NOW →
                 </Button>
               </VStack>
-            ) : (
+            )}
+
+            {activeStep === 3 && (
               /* Step 3: Referral Code */
               <VStack
                 p={5}
@@ -283,7 +299,9 @@ export default function OnboardingModal({
                 gap={4}
               >
                 <VStack gap={1} align="center" textAlign="center">
-                  <Text fontSize="2xl">🎁</Text>
+                  <Icon viewBox="0 0 24 24" boxSize={8} color="purple.400" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                  </Icon>
                   <Text fontFamily="var(--font-retro)" fontSize="xl" color="white">
                     INVITATION REFERRAL
                   </Text>

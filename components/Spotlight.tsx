@@ -22,7 +22,7 @@ export default function Spotlight() {
       if (overlayRef.current) {
         const x = e.clientX;
         const y = e.clientY;
-        const mask = `radial-gradient(circle 250px at ${x}px ${y}px, transparent 0%, rgba(0,0,0,1) 100%)`;
+        const mask = `radial-gradient(circle 290px at ${x}px ${y}px, transparent 0%, rgba(0,0,0,1) 100%)`;
         overlayRef.current.style.maskImage = mask;
         overlayRef.current.style.webkitMaskImage = mask;
       }
@@ -42,11 +42,11 @@ export default function Spotlight() {
       pointerEvents="none"
       zIndex={40}
       style={{
-        backdropFilter: 'grayscale(1)',
-        WebkitBackdropFilter: 'grayscale(1)',
+        backdropFilter: 'grayscale(1) brightness(0.62) contrast(1.08)',
+        WebkitBackdropFilter: 'grayscale(1) brightness(0.62) contrast(1.08)',
         // Start with the mask completely opaque so everything is B&W until the mouse moves
-        maskImage: `radial-gradient(circle 250px at -1000px -1000px, transparent 0%, rgba(0,0,0,1) 100%)`,
-        WebkitMaskImage: `radial-gradient(circle 250px at -1000px -1000px, transparent 0%, rgba(0,0,0,1) 100%)`,
+        maskImage: `radial-gradient(circle 290px at -1000px -1000px, transparent 0%, rgba(0,0,0,1) 100%)`,
+        WebkitMaskImage: `radial-gradient(circle 290px at -1000px -1000px, transparent 0%, rgba(0,0,0,1) 100%)`,
       }}
     />
   );

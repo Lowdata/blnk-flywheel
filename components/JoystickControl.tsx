@@ -10,7 +10,7 @@ const JoystickControl: FC<{
     const [isDragging, setIsDragging] = useState(false);
     const [knobPos, setKnobPos] = useState({ x: 0, y: 0 });
 
-    const RADIUS = 55; // max knob travel in px
+    const RADIUS = 45; // max knob travel in px
 
     const updatePos = useCallback((clientX: number, clientY: number) => {
         if (!baseRef.current) return;
@@ -24,7 +24,7 @@ const JoystickControl: FC<{
         }
         setKnobPos({ x, y });
         onJoystick(x, y);
-    }, [onJoystick]);
+    }, [onJoystick, RADIUS]);
 
     const handleStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         if (disabled) return;
@@ -50,7 +50,7 @@ const JoystickControl: FC<{
     useEffect(() => {
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', handleEnd);
-        window.addEventListener('touchmove', handleMove, { passive: true });
+        window.addEventListener('touchmove', handleMove, { passive: false });
         window.addEventListener('touchend', handleEnd);
         return () => {
             window.removeEventListener('mousemove', handleMove);
@@ -61,32 +61,28 @@ const JoystickControl: FC<{
     }, [handleMove, handleEnd]);
 
     return (
-        <div
-            style={{
-                position: 'absolute',
-                bottom: '28px',
-                left: '28px',
-                zIndex: 10,
-                opacity: disabled ? 0.3 : 1,
-                pointerEvents: disabled ? 'none' : 'auto',
-                transition: 'opacity 0.3s ease',
-            }}
-        >
-            {/* Label */}
-            <div style={{
-                textAlign: 'center',
-                marginBottom: '8px',
+        <div style={{
+            position: 'absolute',
+            bottom: '30px',
+            left: '30px',
+            zIndex: 30,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+        }}>
+            <span style={{
+                fontFamily: 'var(--font-pixel)',
                 fontSize: '9px',
-                fontWeight: 700,
-                letterSpacing: '0.18em',
-                color: 'rgba(255,255,255,0.35)',
-                fontFamily: 'monospace',
+                letterSpacing: '0.2em',
+                color: '#22c55e',
+                textShadow: '0 0 10px rgba(34, 197, 94, 0.6)',
                 textTransform: 'uppercase',
             }}>
-                MOVE
-            </div>
+                JOYSTICK
+            </span>
 
-            {/* Outer base — 3D depth ring */}
+            {/* 3D Sculpted Circular Arcade Joystick Base */}
             <div
                 ref={baseRef}
                 onMouseDown={handleStart}
@@ -98,58 +94,94 @@ const JoystickControl: FC<{
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     position: 'relative',
                     userSelect: 'none',
-                    // 3D depth: concave well effect
-                    background: 'radial-gradient(circle at 40% 35%, #2a2a2a 0%, #111 55%, #0a0a0a 100%)',
+                    background: 'radial-gradient(circle at 35% 35%, #2a2a2e 0%, #111113 70%, #080809 100%)',
+                    border: '4px solid #3f3f46',
                     boxShadow: `
-                        inset 0 4px 12px rgba(0,0,0,0.9),
-                        inset 0 1px 3px rgba(0,0,0,0.7),
-                        0 2px 0 rgba(255,255,255,0.04),
-                        0 8px 32px rgba(0,0,0,0.8),
-                        0 0 0 1px rgba(255,255,255,0.06)
+                        0 10px 25px rgba(0,0,0,0.85),
+                        inset 0 4px 8px rgba(255,255,255,0.1),
+                        inset 0 -6px 12px rgba(0,0,0,0.9),
+                        0 0 0 2px #18181b
                     `,
                 }}
             >
-                {/* Crosshair guides */}
+                {/* Internal beveled ring */}
+                <div style={{
+                    position: 'absolute',
+                    inset: '18px',
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, #09090b 0%, #18181b 100%)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.8)',
+                    pointerEvents: 'none',
+                }} />
+
+                {/* Crosshair guide indicators */}
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                    <div style={{ width: '1px', height: '70%', background: 'rgba(255,255,255,0.06)' }} />
+                    <div style={{ width: '1px', height: '65%', background: 'rgba(34,197,94,0.15)' }} />
                 </div>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                    <div style={{ height: '1px', width: '70%', background: 'rgba(255,255,255,0.06)' }} />
+                    <div style={{ height: '1px', width: '65%', background: 'rgba(34,197,94,0.15)' }} />
                 </div>
 
                 {/* Arrow indicators */}
                 {[
-                    { symbol: '▲', style: { top: 6, left: '50%', transform: 'translateX(-50%)' } },
-                    { symbol: '▼', style: { bottom: 6, left: '50%', transform: 'translateX(-50%)' } },
-                    { symbol: '◀', style: { left: 6, top: '50%', transform: 'translateY(-50%)' } },
-                    { symbol: '▶', style: { right: 6, top: '50%', transform: 'translateY(-50%)' } },
+                    { symbol: '▲', style: { top: 8, left: '50%', transform: 'translateX(-50%)' } },
+                    { symbol: '▼', style: { bottom: 8, left: '50%', transform: 'translateX(-50%)' } },
+                    { symbol: '◀', style: { left: 8, top: '50%', transform: 'translateY(-50%)' } },
+                    { symbol: '▶', style: { right: 8, top: '50%', transform: 'translateY(-50%)' } },
                 ].map(({ symbol, style }) => (
                     <span key={symbol} style={{
                         position: 'absolute',
                         ...style,
-                        fontSize: '8px',
-                        color: 'rgba(255,255,255,0.2)',
+                        fontSize: '9px',
+                        color: 'rgba(34,197,94,0.4)',
+                        textShadow: '0 0 5px rgba(34,197,94,0.3)',
                         pointerEvents: 'none',
                     }}>{symbol}</span>
                 ))}
 
-                {/* Knob — metallic sphere */}
+                {/* 3D Metallic Stick Shaft */}
                 <div style={{
                     position: 'absolute',
-                    width: '52px',
-                    height: '52px',
+                    width: '14px',
+                    height: '14px',
                     borderRadius: '50%',
-                    left: 'calc(50% - 26px)',
-                    top: 'calc(50% - 26px)',
+                    left: 'calc(50% - 7px)',
+                    top: 'calc(50% - 7px)',
+                    transform: `translate(${knobPos.x * 0.4}px, ${knobPos.y * 0.4}px)`,
+                    background: 'linear-gradient(135deg, #a1a1aa 0%, #52525b 50%, #27272a 100%)',
+                    pointerEvents: 'none',
+                }} />
+
+                {/* 3D Sculpted Spherical Joystick Knob */}
+                <div style={{
+                    position: 'absolute',
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    left: 'calc(50% - 28px)',
+                    top: 'calc(50% - 28px)',
                     transform: `translate(${knobPos.x}px, ${knobPos.y}px)`,
                     transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    // Metallic sphere illusion via radial gradient
-                    background: 'radial-gradient(circle at 38% 32%, #888 0%, #444 40%, #1a1a1a 75%, #111 100%)',
+                    background: 'radial-gradient(circle at 35% 30%, #ef4444 0%, #dc2626 50%, #7f1d1d 90%, #450a0a 100%)',
                     boxShadow: isDragging
-                        ? `0 2px 8px rgba(0,0,0,0.8), 0 0 0 2px rgba(255,255,255,0.15), inset 0 1px 2px rgba(255,255,255,0.2)`
-                        : `0 4px 16px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.08), inset 0 1px 3px rgba(255,255,255,0.15)`,
+                        ? `0 4px 10px rgba(0,0,0,0.8), inset 0 3px 6px rgba(255,255,255,0.4), inset 0 -4px 8px rgba(0,0,0,0.7)`
+                        : `0 8px 20px rgba(0,0,0,0.9), inset 0 4px 8px rgba(255,255,255,0.5), inset 0 -6px 12px rgba(0,0,0,0.8)`,
                     cursor: disabled ? 'not-allowed' : 'grab',
-                }} />
+                }}>
+                    {/* Top specular highlight reflection */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '10px',
+                        left: '12px',
+                        width: '16px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.45)',
+                        filter: 'blur(1px)',
+                        transform: 'rotate(-25deg)',
+                    }} />
+                </div>
             </div>
         </div>
     );

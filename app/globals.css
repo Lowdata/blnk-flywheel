@@ -1,23 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #060d08;
+  --foreground: #dcfce7;
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-retro: 'VT323', monospace;
+  --font-silkscreen: 'Silkscreen', monospace;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-retro), monospace;
+  image-rendering: pixelated;
+}
+
+/* Old CRT Phosphor Green Retro Pixel Box Style */
+.pixel-box {
+  background-color: #0b1810;
+  border: 4px solid #166534;
+  box-shadow: 
+    0 4px 0 #050a06,
+    inset 0 2px 0 rgba(74, 222, 128, 0.15),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+}
+
+.pixel-card {
+  background-color: #0f2416;
+  border: 2px solid #15803d;
+  box-shadow: 
+    0 2px 0 #050a06,
+    inset 0 1px 0 rgba(74, 222, 128, 0.2);
+}
+
+.pixel-button {
+  font-family: 'Press Start 2P', monospace;
+  background-color: #15803d;
+  color: #ffffff;
+  border: 3px solid #14532d;
+  box-shadow: 0 4px 0 #052e16, 0 6px 14px rgba(0,0,0,0.8);
+  transition: all 0.1s ease;
+  text-shadow: 0 2px 0 #052e16;
+}
+
+.pixel-button:hover {
+  background-color: #16a34a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #052e16, 0 8px 18px rgba(0,0,0,0.9);
+}
+
+.pixel-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #052e16;
+}
+
+.font-pixel {
+  font-family: 'Press Start 2P', monospace !important;
+}
+
+.font-retro {
+  font-family: 'VT323', monospace !important;
+}
+
+.font-silkscreen {
+  font-family: 'Silkscreen', monospace !important;
 }
 
 #root {

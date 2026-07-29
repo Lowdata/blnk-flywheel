@@ -8,6 +8,8 @@ import JoystickControl from '@/components/JoystickControl';
 import ProgressBar from '@/components/ProgressBar';
 import Scene from '@/components/Scene';
 import { useRouter } from 'next/navigation';
+import { soundManager } from '@/lib/sound';
+import SoundButton from '@/components/SoundButton';
 
 /* ─── Game Phase State Machine ──────────────────────────────────────────────
    intro        → Big "PLAY GAME" button. Controls hidden.
@@ -126,6 +128,8 @@ export default function GamePage() {
             });
             return;
         }
+        soundManager.playClick();
+        soundManager.playCoin();
         setPhase('spending');
         setCoinArcVisible(true);
 
@@ -159,19 +163,29 @@ export default function GamePage() {
     /* ── DROP handler — starts claw animation, then reveals outcome ───────── */
     const handleDrop = useCallback(() => {
         if (phase !== 'playing') return;
+        soundManager.playDrop();
         setPhase('grabbing');
+        // The claw reaches the capsule at 1.5s and its three prongs clamp at 1.7s.
+        setTimeout(() => soundManager.playGrab(), 1700);
         const outcome = pendingOutcomeRef.current ?? 'LOSS';
 
         // Scene notifies us when the capsule has reached the delivery chute.
         // This keeps the reveal synchronized with the actual 3D animation.
         ref.current?.onPick(outcome, () => {
+            soundManager.playBallDrop();
             setPhase('revealing');
             ref.current?.startReveal(
                 outcome,
                 () => setRevealStep('ready'),
                 () => {
                     setRevealStep('opened');
-                    setOutcomeCard({ outcome, isWin: outcome !== 'LOSS' });
+                    const isWin = outcome !== 'LOSS';
+                    setOutcomeCard({ outcome, isWin });
+                    if (!isWin) {
+                        soundManager.playLoss();
+                    } else {
+                        soundManager.playWin(outcome === 'GUARANTEED');
+                    }
                 }
             );
         });
@@ -179,6 +193,7 @@ export default function GamePage() {
 
     const handleClickCapsule = useCallback(() => {
         if (phase !== 'revealing' || revealStep !== 'ready') return;
+        soundManager.playPop();
         setRevealStep('opening');
         ref.current?.clickCapsule();
     }, [phase, revealStep]);
@@ -230,12 +245,12 @@ export default function GamePage() {
                 * { box-sizing: border-box; margin: 0; padding: 0; }
             `}</style>
 
-            <Box position="relative" w="100vw" h="100vh" overflow="hidden" bg="#0A0A0A">
+            <Box position="relative" w="100vw" h="100vh" overflow="hidden" bg="#10170e">
 
                 {/* Subtle deep vignette — monochrome only */}
                 <Box
                     position="absolute" inset={0} zIndex={1} pointerEvents="none"
-                    bgGradient="radial(ellipse at center, transparent 30%, rgba(0,0,0,0.75) 100%)"
+                    bgGradient="radial(ellipse at center, transparent 24%, rgba(4,10,3,0.82) 100%)"
                 />
 
                 {/* Coin arc sprite */}
@@ -262,30 +277,39 @@ export default function GamePage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '16px 20px',
+                    padding: '20px 24px',
                     background: 'linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%)',
                     pointerEvents: 'none',
                 }}>
-                    {/* Home button */}
+                    {/* Monochrome Game Vibe Dashboard Home button */}
                     <button
                         onClick={() => router.push('/')}
                         style={{
                             pointerEvents: 'auto',
-                            background: 'rgba(255,255,255,0.06)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '10px',
-                            color: 'rgba(255,255,255,0.7)',
-                            fontFamily: 'monospace',
-                            fontSize: '11px',
+                            background: 'rgba(15, 15, 18, 0.85)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '9999px',
+                            color: '#ffffff',
+                            fontFamily: 'var(--font-pixel)',
+                            fontSize: '10px',
                             fontWeight: 700,
                             letterSpacing: '0.15em',
-                            padding: '8px 14px',
+                            padding: '10px 18px',
                             cursor: 'pointer',
-                            backdropFilter: 'blur(8px)',
-                            transition: 'background 0.2s, color 0.2s',
+                            backdropFilter: 'blur(12px)',
+                            boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                            transition: 'all 0.15s ease',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px',
+                            gap: '8px',
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.borderColor = '#edc75b';
+                            e.currentTarget.style.color = '#edc75b';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                            e.currentTarget.style.color = '#ffffff';
                         }}
                     >
                         ← DASHBOARD
@@ -293,35 +317,42 @@ export default function GamePage() {
 
                     {/* BLNK brand */}
                     <div style={{
-                        fontFamily: 'monospace',
+                        fontFamily: 'var(--font-pixel)',
                         fontWeight: 900,
-                        fontSize: '16px',
+                        fontSize: '18px',
                         letterSpacing: '0.35em',
-                        color: 'rgba(255,255,255,0.9)',
+                        color: '#edc75b',
+                        textShadow: '0 0 15px rgba(237, 199, 91, 0.5)',
                         textTransform: 'uppercase',
                         pointerEvents: 'none',
                     }}>
                         BLNK
                     </div>
 
-                    {/* Coin balance */}
-                    <div style={{
-                        pointerEvents: 'auto',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '10px',
-                        padding: '8px 14px',
-                        backdropFilter: 'blur(8px)',
-                    }}>
-                        <span style={{
-                            fontFamily: 'monospace',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            letterSpacing: '0.15em',
-                            color: 'rgba(255,255,255,0.8)',
+                    {/* Right Side: Sound Button + Monochrome Gold Coins Badge */}
+                    <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <SoundButton />
+                        <div style={{
+                            background: 'rgba(15, 15, 18, 0.85)',
+                            border: '1px solid rgba(237, 199, 91, 0.35)',
+                            borderRadius: '9999px',
+                            padding: '10px 18px',
+                            backdropFilter: 'blur(12px)',
+                            boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
                         }}>
-                            ◈ {user?.coins ?? 0} COINS
-                        </span>
+                            <span style={{
+                                fontFamily: 'var(--font-pixel)',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                letterSpacing: '0.15em',
+                                color: '#edc75b',
+                                textShadow: '0 0 10px rgba(237, 199, 91, 0.4)',
+                            }}>
+                                ◈ {user?.coins ?? 0} COINS
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -335,7 +366,7 @@ export default function GamePage() {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'flex-end',
-                        paddingBottom: '120px',
+                        paddingBottom: '110px',
                         pointerEvents: 'none',
                         animation: 'fadeUp 0.6s ease both',
                     }}>
@@ -344,42 +375,60 @@ export default function GamePage() {
                                 onClick={handlePlay}
                                 style={{
                                     padding: '0',
-                                    width: '200px',
-                                    height: '64px',
-                                    borderRadius: '16px',
-                                    border: '1px solid rgba(255,255,255,0.18)',
-                                    background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)',
-                                    color: '#fff',
-                                    fontSize: '15px',
+                                    width: '230px',
+                                    height: '60px',
+                                    borderRadius: '9999px',
+                                    border: '1px solid rgba(237, 199, 91, 0.45)',
+                                    background: 'linear-gradient(135deg, rgba(20, 20, 25, 0.95) 0%, rgba(10, 10, 12, 0.95) 100%)',
+                                    color: '#ffffff',
+                                    fontSize: '12px',
                                     fontWeight: 800,
-                                    fontFamily: 'monospace',
-                                    letterSpacing: '0.22em',
+                                    fontFamily: 'var(--font-pixel)',
+                                    letterSpacing: '0.25em',
                                     cursor: 'pointer',
                                     textTransform: 'uppercase',
-                                    boxShadow: `
-                                        0 8px 0 rgba(0,0,0,0.8),
-                                        0 12px 30px rgba(0,0,0,0.6),
-                                        inset 0 1px 0 rgba(255,255,255,0.12)
-                                    `,
-                                    transition: 'transform 80ms, box-shadow 80ms',
+                                    backdropFilter: 'blur(16px)',
+                                    boxShadow: '0 0 30px rgba(237, 199, 91, 0.25), 0 10px 25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2)',
+                                    transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
                                     animation: 'pulseRing 2.4s ease-in-out infinite',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '10px',
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.borderColor = '#edc75b';
+                                    e.currentTarget.style.color = '#edc75b';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 0 35px rgba(237, 199, 91, 0.45), 0 12px 30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.3)';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.borderColor = 'rgba(237, 199, 91, 0.45)';
+                                    e.currentTarget.style.color = '#ffffff';
+                                    e.currentTarget.style.transform = 'translateY(0px)';
+                                    e.currentTarget.style.boxShadow = '0 0 30px rgba(237, 199, 91, 0.25), 0 10px 25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2)';
                                 }}
                                 onMouseDown={e => {
-                                    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(6px)';
-                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 0 rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)';
+                                    e.currentTarget.style.transform = 'translateY(2px)';
                                 }}
                                 onMouseUp={e => {
-                                    (e.currentTarget as HTMLButtonElement).style.transform = '';
-                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '';
+                                    e.currentTarget.style.transform = 'translateY(0px)';
                                 }}
                             >
                                 ▶ PLAY GAME
                             </button>
                             <div style={{
-                                fontSize: '10px',
-                                fontFamily: 'monospace',
-                                color: 'rgba(255,255,255,0.3)',
-                                letterSpacing: '0.15em',
+                                background: 'rgba(10, 10, 14, 0.85)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                borderRadius: '9999px',
+                                padding: '6px 16px',
+                                backdropFilter: 'blur(10px)',
+                                fontSize: '9px',
+                                fontFamily: 'var(--font-pixel)',
+                                color: '#edc75b',
+                                letterSpacing: '0.2em',
+                                textShadow: '0 0 10px rgba(237, 199, 91, 0.4)',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
                             }}>
                                 COSTS 3 COINS
                             </div>
@@ -413,7 +462,14 @@ export default function GamePage() {
                 {(phase === 'playing' || phase === 'grabbing') && (
                     <>
                         <JoystickControl
-                            onJoystick={(x, z) => ref.current?.onJoystick(x, z)}
+                            onJoystick={(x, z) => {
+                                if (Math.abs(x) > 0.1 || Math.abs(z) > 0.1) {
+                                    soundManager.playMove();
+                                } else {
+                                    soundManager.stopMove();
+                                }
+                                ref.current?.onJoystick(x, z);
+                            }}
                             disabled={phase === 'grabbing'}
                         />
                         <ButtonsControl

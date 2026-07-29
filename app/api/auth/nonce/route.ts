@@ -13,8 +13,6 @@ export async function GET() {
     session.nonce = nonce;
     await session.save();
 
-    console.log('[AUTH DEBUG] Nonce generated:', nonce);
-
     return new NextResponse(nonce, {
       status: 200,
       headers: {

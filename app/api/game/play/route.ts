@@ -3,7 +3,6 @@ import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import dbConnect from '@/lib/mongodb';
 import { User } from '@/models/User';
-import { Reward } from '@/models/Reward';
 import { NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rateLimit';
 
@@ -79,11 +78,18 @@ export async function POST() {
 
         // Record win
         if (outcome !== 'LOSS') {
-            await Reward.create({
-                userId: updated._id,
-                type: outcome,
-                claimed: false,
-            });
+            await User.updateOne(
+                { _id: updated._id },
+                {
+                    $push: {
+                        rewards: {
+                            type: outcome,
+                            claimed: false,
+                            createdAt: new Date(),
+                        },
+                    },
+                }
+            );
         }
 
         return NextResponse.json({

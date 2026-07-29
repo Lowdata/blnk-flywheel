@@ -1,5 +1,13 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
 
+export interface IRewardItem {
+  _id?: mongoose.Types.ObjectId;
+  type: 'GTD' | 'FCFS' | 'LOSS';
+  claimed: boolean;
+  transactionHash?: string;
+  createdAt?: Date;
+}
+
 export interface IUser extends Document {
   walletAddress: string;
   nonce: string;
@@ -7,11 +15,22 @@ export interface IUser extends Document {
   referralCode: string;
   referredBy?: string;
   completedTasks: mongoose.Types.ObjectId[];
+  rewards: IRewardItem[];
   twitterHandle?: string;
   twitterLinked: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const RewardItemSchema = new Schema(
+  {
+    type: { type: String, enum: ['GTD', 'FCFS', 'LOSS'], required: true },
+    claimed: { type: Boolean, default: false },
+    transactionHash: { type: String },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
 
 const UserSchema: Schema = new Schema(
   {
@@ -25,6 +44,7 @@ const UserSchema: Schema = new Schema(
     },
     referredBy: { type: String },
     completedTasks: [{ type: Schema.Types.ObjectId, ref: 'Task' }],
+    rewards: { type: [RewardItemSchema], default: [] },
     twitterHandle: { type: String },
     twitterLinked: { type: Boolean, default: false },
   },

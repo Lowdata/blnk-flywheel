@@ -552,7 +552,6 @@ const Scene: ForwardRefRenderFunction<
 
     const startReveal = useCallback((outcome: string, onReady?: () => void, onComplete?: () => void) => {
         const idx = caughtBallIndexRef.current != null ? caughtBallIndexRef.current : 0;
-        console.log(`[REVEAL EVENT ${new Date().toISOString()}] startReveal triggered. Ball index: ${idx}, Outcome: ${outcome}`);
         const selectedBall = ballRefs.current[idx]?.current;
         if (selectedBall && selectedBall.setBodyType) {
             selectedBall.setBodyType(2, true);
@@ -579,7 +578,6 @@ const Scene: ForwardRefRenderFunction<
     }, [presentationCapsule]);
 
     const clickCapsule = useCallback(() => {
-        console.log(`[REVEAL EVENT ${new Date().toISOString()}] clickCapsule triggered by user interaction.`);
         revealTimerRef.current = 0;
         setRevealState(previous => {
             if (previous?.step === 'ready') {
@@ -590,7 +588,6 @@ const Scene: ForwardRefRenderFunction<
     }, []);
 
     const closeReveal = useCallback(() => {
-        console.log(`[REVEAL EVENT ${new Date().toISOString()}] closeReveal triggered. Resetting capsule position and starting camera return.`);
         if (revealState) {
             const selectedBall = ballRefs.current[revealState.ballIndex]?.current;
             if (selectedBall) {

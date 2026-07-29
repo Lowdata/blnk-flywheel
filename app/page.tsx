@@ -19,6 +19,8 @@ export default function Dashboard() {
   const [address, setAddress] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [verifyingTasks, setVerifyingTasks] = useState<{ [taskId: string]: number }>({});
   const toast = useToast();
   const router = useRouter();
 
@@ -37,9 +39,99 @@ export default function Dashboard() {
     }
   };
 
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch('/api/tasks');
+      if (res.ok) {
+        const data = await res.json();
+        setTasks(data.tasks || []);
+      }
+    } catch (e) {
+      console.error('Error fetching tasks:', e);
+    }
+  };
+
   useEffect(() => {
     fetchUser();
+    fetchTasks();
   }, []);
+
+  const handleTaskClick = (task: any) => {
+    if (!user) return;
+    const isCompleted = user.completedTasks?.some(
+      (ct: any) =>
+        (ct._id || ct).toString() === (task._id || '').toString() || ct.taskId === task.taskId
+    );
+
+    if (task.type === 'referral' && isCompleted) {
+      soundManager.playClick();
+      if (task.taskUrl) {
+        window.open(task.taskUrl, '_blank');
+      }
+      toast({
+        title: 'Referral link opened!',
+        description: 'Share with friends to grow the BLNK community.',
+        status: 'info',
+        duration: 3000,
+      });
+      return;
+    }
+
+    if (isCompleted || verifyingTasks[task.taskId]) return;
+
+    soundManager.playClick();
+    if (task.taskUrl) {
+      window.open(task.taskUrl, '_blank');
+    }
+
+    let secondsLeft = 5;
+    setVerifyingTasks((prev) => ({ ...prev, [task.taskId]: secondsLeft }));
+
+    const interval = setInterval(async () => {
+      secondsLeft -= 1;
+      if (secondsLeft > 0) {
+        setVerifyingTasks((prev) => ({ ...prev, [task.taskId]: secondsLeft }));
+      } else {
+        clearInterval(interval);
+        setVerifyingTasks((prev) => {
+          const copy = { ...prev };
+          delete copy[task.taskId];
+          return copy;
+        });
+
+        try {
+          const res = await fetch('/api/tasks/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId: task.taskId }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            soundManager.playWin();
+            toast({
+              title: `Task verified! +${task.rewardAmount} Coins`,
+              status: 'success',
+              duration: 3000,
+            });
+            setUser((prevUser: any) => {
+              if (!prevUser) return null;
+              return {
+                ...prevUser,
+                coins: data.coins,
+                twitterLinked: task.taskId === 'twitter_connect' ? true : prevUser.twitterLinked,
+                twitterHandle: task.taskId === 'twitter_connect' ? (prevUser.twitterHandle || '@BLNK_Member') : prevUser.twitterHandle,
+                completedTasks: [...(prevUser.completedTasks || []), task],
+              };
+            });
+          } else {
+            toast({ title: data.message || 'Task verification failed', status: 'error' });
+          }
+        } catch (err) {
+          toast({ title: 'Failed to complete task', status: 'error' });
+        }
+      }
+    }, 1000);
+  };
 
   const connectWallet = async () => {
     soundManager.playClick();
@@ -365,57 +457,123 @@ export default function Dashboard() {
                   Complete tasks to earn coins and play the claw machine.
                 </Text>
                 
-                {user?.twitterLinked ? (
-                  <Box p={3} bg="#14532d" border="2px solid" borderColor="#22c55e" color="white" textAlign="center" fontFamily="var(--font-retro)" fontSize="xl">
-                    ✓ Twitter Linked ({user.twitterHandle})
-                  </Box>
-                ) : (
-                  <VStack gap={3}>
-                    <Text color="green.200" fontFamily="var(--font-retro)" fontSize="lg" w="full" textAlign="left">Enter your Twitter handle (+10 Coins):</Text>
-                    <Flex w="full" gap={2}>
-                      <Box
-                        as="input"
-                        id="twitterInput"
-                        placeholder="@handle"
-                        bg="#050a06"
-                        color="white"
-                        p={2.5}
-                        fontFamily="var(--font-retro)"
-                        fontSize="xl"
-                        border="2px solid"
-                        borderColor="#166534"
-                        _focus={{ outline: 'none', borderColor: '#22c55e' }}
-                      />
-                      <Button
-                        className="pixel-button"
-                        fontFamily="var(--font-pixel)"
-                        fontSize="2xs"
-                        px={4}
-                        rounded="none"
-                        onClick={async () => {
-                          soundManager.playClick();
-                          const val = (document.getElementById('twitterInput') as HTMLInputElement).value;
-                          if (!val) return toast({ title: 'Enter a handle', status: 'warning' });
-                          try {
-                            const res = await fetch('/api/tasks/twitter', { method: 'POST', body: JSON.stringify({ handle: val }) });
-                            const data = await res.json();
-                            if (res.ok) {
-                              toast({ title: 'Twitter linked! +10 Coins', status: 'success' });
-                              soundManager.playWin();
-                              setUser({ ...user, twitterLinked: true, twitterHandle: data.handle, coins: data.coins });
-                            } else {
-                              toast({ title: data.message, status: 'error' });
-                            }
-                          } catch (e) {
-                            toast({ title: 'Error linking Twitter', status: 'error' });
+                <VStack gap={3.5} w="full" align="stretch">
+                  {tasks.length === 0 ? (
+                    <Text color="green.300" fontFamily="var(--font-retro)" fontSize="lg">
+                      Loading tasks from DB...
+                    </Text>
+                  ) : (
+                    tasks.map((task) => {
+                      const isCompleted = user?.completedTasks?.some(
+                        (ct: any) =>
+                          (ct._id || ct).toString() === (task._id || '').toString() ||
+                          ct.taskId === task.taskId
+                      );
+                      const isVerifying = verifyingTasks[task.taskId] !== undefined;
+                      const secondsLeft = verifyingTasks[task.taskId];
+
+                      let icon = '⚡';
+                      if (task.taskId === 'twitter_connect') icon = '🔗';
+                      else if (task.taskId === 'twitter_follow') icon = '🐦';
+                      else if (task.taskId === 'twitter_rt') icon = '🔁';
+                      else if (task.taskId === 'twitter_intent') icon = '💬';
+                      else if (task.taskId === 'referral_share') icon = '🎁';
+
+                      return (
+                        <Flex
+                          key={task.taskId || task._id}
+                          p={3.5}
+                          bg={isCompleted && task.type !== 'referral' ? '#05130a' : '#050a06'}
+                          border="2px solid"
+                          borderColor={isCompleted && task.type !== 'referral' ? '#166534' : isVerifying ? '#eab308' : '#22c55e'}
+                          justify="space-between"
+                          align="center"
+                          gap={3}
+                          transition="all 0.2s"
+                          _hover={
+                            (!isCompleted || task.type === 'referral') && !isVerifying
+                              ? { borderColor: '#4ade80', transform: 'translateY(-1px)' }
+                              : undefined
                           }
-                        }}
-                      >
-                        LINK
-                      </Button>
-                    </Flex>
-                  </VStack>
-                )}
+                        >
+                          <HStack gap={3} flex={1}>
+                            <Text fontSize="xl">{icon}</Text>
+                            <VStack align="start" gap={0}>
+                              <Text
+                                color={isCompleted && task.type !== 'referral' ? 'green.400' : 'white'}
+                                fontFamily="var(--font-retro)"
+                                fontSize="xl"
+                                textDecoration={isCompleted && task.type !== 'referral' ? 'line-through' : 'none'}
+                              >
+                                {task.description}
+                              </Text>
+                              <Text color="green.300" fontFamily="var(--font-pixel)" fontSize="3xs">
+                                +{task.rewardAmount} COINS
+                              </Text>
+                            </VStack>
+                          </HStack>
+
+                          {isCompleted ? (
+                            task.type === 'referral' ? (
+                              <Button
+                                size="sm"
+                                bg="transparent"
+                                border="1px solid"
+                                borderColor="#22c55e"
+                                color="green.300"
+                                fontFamily="var(--font-pixel)"
+                                fontSize="3xs"
+                                _hover={{ bg: '#14532d' }}
+                                onClick={() => handleTaskClick(task)}
+                              >
+                                SHARE
+                              </Button>
+                            ) : (
+                              <Box
+                                px={3}
+                                py={1.5}
+                                bg="#14532d"
+                                border="1px solid"
+                                borderColor="#22c55e"
+                                color="green.200"
+                                fontFamily="var(--font-pixel)"
+                                fontSize="3xs"
+                              >
+                                ✓ DONE
+                              </Box>
+                            )
+                          ) : isVerifying ? (
+                            <Box
+                              px={3}
+                              py={1.5}
+                              bg="#713f12"
+                              border="1px solid"
+                              borderColor="#eab308"
+                              color="yellow.200"
+                              fontFamily="var(--font-pixel)"
+                              fontSize="3xs"
+                              className="animate-pulse"
+                            >
+                              VERIFYING... ({secondsLeft}s)
+                            </Box>
+                          ) : (
+                            <Button
+                              className="pixel-button"
+                              fontFamily="var(--font-pixel)"
+                              fontSize="3xs"
+                              px={4}
+                              py={2}
+                              rounded="none"
+                              onClick={() => handleTaskClick(task)}
+                            >
+                              START
+                            </Button>
+                          )}
+                        </Flex>
+                      );
+                    })
+                  )}
+                </VStack>
               </SpotlightCard>
 
               {/* Referrals Card */}

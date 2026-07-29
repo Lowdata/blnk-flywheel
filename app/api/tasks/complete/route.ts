@@ -27,16 +27,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: 'Task not found' }, { status: 404 });
     }
 
-    if (user.completedTasks.includes(task._id as any)) {
-      return NextResponse.json({ ok: false, message: 'Task already completed' }, { status: 400 });
+    const isAlreadyCompleted = user.completedTasks.some(
+      (id: any) => (id._id || id).toString() === task._id.toString()
+    );
+
+    if (isAlreadyCompleted) {
+      return NextResponse.json({
+        ok: true,
+        message: 'Task already completed',
+        coins: user.coins,
+        completedTaskId: task._id,
+        alreadyCompleted: true,
+      });
     }
 
     // Give reward
     user.coins += task.rewardAmount;
-    user.completedTasks.push(task._id as any);
+    if (!isAlreadyCompleted) {
+      user.completedTasks.push(task._id as any);
+    }
+    if (task.taskId === 'twitter_connect' && !user.twitterLinked) {
+      user.twitterLinked = true;
+      if (!user.twitterHandle) user.twitterHandle = '@BLNK_Member';
+    }
     await user.save();
 
-    return NextResponse.json({ ok: true, coins: user.coins });
+    return NextResponse.json({ ok: true, coins: user.coins, completedTaskId: task._id });
   } catch (e: any) {
     return NextResponse.json({ ok: false, message: e.message }, { status: 500 });
   }

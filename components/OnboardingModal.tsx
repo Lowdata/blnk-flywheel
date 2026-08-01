@@ -91,9 +91,9 @@ export default function OnboardingModal({
     <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg" closeOnOverlayClick={false}>
       <ModalOverlay bg="rgba(0, 0, 0, 0.88)" backdropFilter="blur(8px)" />
       <ModalContent
-        bg="#050e08"
-        border="2px solid #22c55e"
-        boxShadow="0 0 35px rgba(34, 197, 94, 0.35), inset 0 0 15px rgba(34, 197, 94, 0.15)"
+        bg="#0e0514"
+        border="2px solid #d946ef"
+        boxShadow="0 0 35px rgba(236, 72, 153, 0.35), inset 0 0 15px rgba(236, 72, 153, 0.15)"
         borderRadius="none"
         p={6}
         color="white"
@@ -107,8 +107,8 @@ export default function OnboardingModal({
           left="20%"
           right="20%"
           height="3px"
-          bg="#4ade80"
-          boxShadow="0 0 12px #4ade80"
+          bg="#f472b6"
+          boxShadow="0 0 12px #f472b6"
         />
 
         <ModalBody p={0}>
@@ -117,7 +117,7 @@ export default function OnboardingModal({
               <Text
                 fontFamily="var(--font-pixel)"
                 fontSize="xs"
-                color="green.400"
+                color="pink.400"
                 letterSpacing="2px"
                 textAlign="center"
               >
@@ -128,7 +128,7 @@ export default function OnboardingModal({
                 fontSize="3xl"
                 color="white"
                 textAlign="center"
-                textShadow="0 0 10px rgba(74, 222, 128, 0.4)"
+                textShadow="0 0 10px rgba(244, 114, 182, 0.4)"
               >
                 ONBOARDING PROTOCOL
               </Text>
@@ -139,22 +139,22 @@ export default function OnboardingModal({
               <Box
                 flex={1}
                 p={2}
-                bg={user ? '#05130a' : '#0a2312'}
+                bg={user ? '#0e0514' : '#1c082a'}
                 border="1px solid"
-                borderColor={user ? '#22c55e' : '#eab308'}
+                borderColor={user ? '#d946ef' : '#a855f7'}
                 textAlign="center"
               >
                 <Text fontFamily="var(--font-pixel)" fontSize="3xs" color={user ? 'green.400' : 'yellow.400'}>
                   1. WALLET {user ? '✓' : 'REQUIRED'}
                 </Text>
               </Box>
-              <Box w="10px" h="2px" bg="#22c55e" mx={1} />
+              <Box w="10px" h="2px" bg="#d946ef" mx={1} />
               <Box
                 flex={1}
                 p={2}
-                bg={user?.twitterLinked ? '#05130a' : '#050a06'}
+                bg={user?.twitterLinked ? '#0e0514' : '#08030d'}
                 border="1px solid"
-                borderColor={user?.twitterLinked ? '#22c55e' : '#334155'}
+                borderColor={user?.twitterLinked ? '#d946ef' : '#334155'}
                 textAlign="center"
               >
                 <Text
@@ -165,13 +165,13 @@ export default function OnboardingModal({
                   2. TWITTER {user?.twitterLinked ? '✓' : ''}
                 </Text>
               </Box>
-              <Box w="10px" h="2px" bg="#22c55e" mx={1} />
+              <Box w="10px" h="2px" bg="#d946ef" mx={1} />
               <Box
                 flex={1}
                 p={2}
-                bg={user?.referredBy ? '#05130a' : '#050a06'}
+                bg={user?.referredBy ? '#0e0514' : '#08030d'}
                 border="1px solid"
-                borderColor={user?.referredBy ? '#22c55e' : '#334155'}
+                borderColor={user?.referredBy ? '#d946ef' : '#334155'}
                 textAlign="center"
               >
                 <Text
@@ -188,13 +188,13 @@ export default function OnboardingModal({
             {activeStep === 1 && (
               <VStack
                 p={5}
-                bg="#030805"
-                border="1px solid #166534"
+                bg="#060308"
+                border="1px solid #701a75"
                 align="center"
                 gap={4}
                 textAlign="center"
               >
-                <Icon viewBox="0 0 24 24" boxSize={8} color="green.400" fill="none" stroke="currentColor" strokeWidth={2}>
+                <Icon viewBox="0 0 24 24" boxSize={8} color="pink.400" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </Icon>
                 <VStack gap={1}>
@@ -207,12 +207,12 @@ export default function OnboardingModal({
                 </VStack>
                 <Button
                   w="full"
-                  bg="#22c55e"
+                  bg="#d946ef"
                   color="black"
                   fontFamily="var(--font-pixel)"
                   fontSize="2xs"
                   py={6}
-                  _hover={{ bg: '#4ade80', boxShadow: '0 0 15px rgba(74, 222, 128, 0.4)' }}
+                  _hover={{ bg: '#f472b6', boxShadow: '0 0 15px rgba(244, 114, 182, 0.4)' }}
                   onClick={onConnectWallet}
                 >
                   INITIALIZE SIWE CONNECTION
@@ -224,8 +224,8 @@ export default function OnboardingModal({
               /* Step 2: Link Twitter */
               <VStack
                 p={5}
-                bg="#030805"
-                border="1px solid #166534"
+                bg="#060308"
+                border="1px solid #701a75"
                 align="stretch"
                 gap={4}
               >
@@ -246,7 +246,7 @@ export default function OnboardingModal({
                     placeholder="ENTER @USERNAME"
                     value={twitterUsername}
                     onChange={(e) => setTwitterUsername(e.target.value)}
-                    bg="#05130a"
+                    bg="#0e0514"
                     border="1px solid #1da1f2"
                     color="white"
                     fontFamily="var(--font-mono)"
@@ -293,8 +293,8 @@ export default function OnboardingModal({
               /* Step 3: Referral Code */
               <VStack
                 p={5}
-                bg="#030805"
-                border="1px solid #166534"
+                bg="#060308"
+                border="1px solid #701a75"
                 align="stretch"
                 gap={4}
               >
@@ -316,9 +316,9 @@ export default function OnboardingModal({
                       placeholder="ENTER CODE (e.g. BLNK-E4F1B3)"
                       value={referralInput}
                       onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
-                      bg="#05130a"
-                      border="1px solid #22c55e"
-                      color="green.200"
+                      bg="#0e0514"
+                      border="1px solid #d946ef"
+                      color="pink.200"
                       fontFamily="var(--font-mono)"
                       textAlign="center"
                       fontSize="md"
@@ -328,25 +328,25 @@ export default function OnboardingModal({
                     <HStack w="full" gap={3}>
                       <Button
                         flex={1}
-                        bg="#22c55e"
+                        bg="#d946ef"
                         color="black"
                         fontFamily="var(--font-pixel)"
                         fontSize="3xs"
                         isLoading={isClaiming}
                         onClick={handleClaimReferral}
-                        _hover={{ bg: '#4ade80' }}
+                        _hover={{ bg: '#f472b6' }}
                       >
                         CLAIM (+15 COINS)
                       </Button>
                       <Button
                         flex={1}
                         bg="transparent"
-                        border="1px solid #22c55e"
-                        color="green.400"
+                        border="1px solid #d946ef"
+                        color="pink.400"
                         fontFamily="var(--font-pixel)"
                         fontSize="3xs"
                         onClick={onClose}
-                        _hover={{ bg: '#14532d' }}
+                        _hover={{ bg: '#4a044e' }}
                       >
                         ENTER FLYWHEEL →
                       </Button>
@@ -354,17 +354,17 @@ export default function OnboardingModal({
                   </VStack>
                 ) : (
                   <VStack gap={3} align="center">
-                    <Text fontFamily="var(--font-pixel)" fontSize="2xs" color="green.400">
+                    <Text fontFamily="var(--font-pixel)" fontSize="2xs" color="pink.400">
                       ✓ REFERRAL APPLIED ({user.referredBy})
                     </Text>
                     <Button
                       w="full"
-                      bg="#22c55e"
+                      bg="#d946ef"
                       color="black"
                       fontFamily="var(--font-pixel)"
                       fontSize="2xs"
                       py={6}
-                      _hover={{ bg: '#4ade80', boxShadow: '0 0 15px rgba(74, 222, 128, 0.6)' }}
+                      _hover={{ bg: '#f472b6', boxShadow: '0 0 15px rgba(74, 222, 128, 0.6)' }}
                       onClick={onClose}
                     >
                       ENTER THE CLAW MACHINE →

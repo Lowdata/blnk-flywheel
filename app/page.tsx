@@ -331,17 +331,17 @@ export default function Dashboard() {
                   size="sm"
                   bg="transparent"
                   border="1px solid"
-                  borderColor="red.800"
-                  color="red.400"
+                  borderColor="pink.800"
+                  color="pink.400"
                   fontFamily="var(--font-pixel)"
                   fontSize={{ base: '2xs', md: 'xs' }}
                   px={3}
                   h="36px"
                   rounded="none"
-                  _hover={{ bg: 'red.900', borderColor: 'red.600' }}
+                  _hover={{ bg: 'pink.900', borderColor: 'pink.600' }}
                   onClick={handleLogout}
                 >
-                  ⏻
+                  ⏻ LOGOUT
                 </Button>
               </>
             )}

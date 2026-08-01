@@ -2,8 +2,20 @@ import { Providers } from './providers';
 import Spotlight from '@/components/Spotlight';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Press_Start_2P, VT323, Silkscreen } from 'next/font/google';
+import { Press_Start_2P, VT323, Silkscreen, Inter, Montserrat } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-montserrat',
+});
 
 const pressStart2P = Press_Start_2P({
   weight: '400',
@@ -40,7 +52,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${pressStart2P.variable} ${vt323.variable} ${silkscreen.variable}`}
+      className={`${inter.variable} ${montserrat.variable} ${pressStart2P.variable} ${vt323.variable} ${silkscreen.variable}`}
     >
       <body suppressHydrationWarning>
         <Providers>

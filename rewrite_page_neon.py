@@ -1,275 +1,19 @@
-'use client';
+import re
 
-import { useState, useEffect } from 'react';
-import { Box, Button, Flex, Heading, Text, VStack, HStack, SimpleGrid, useToast, Input, Modal, ModalOverlay, ModalContent, ModalBody, ModalCloseButton } from '@chakra-ui/react';
+with open('/Users/ayushpahuja/Downloads/ClawMachine_Template/game/blnk-flywheel/app/page.tsx', 'r') as f:
+    content = f.read()
 
-import { useRouter } from 'next/navigation';
-import SpotlightCard from '@/components/SpotlightCard';
-import SoundButton from '@/components/SoundButton';
-import OnboardingModal from '@/components/OnboardingModal';
-import { soundManager } from '@/lib/sound';
+start_idx = content.find('  return (')
+if start_idx == -1:
+    print("Could not find return statement")
+    exit(1)
 
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
+# Remove MouseSpotlight import if present
+content = content.replace("import MouseSpotlight from '@/components/MouseSpotlight';\n", "")
 
-export default function Dashboard() {
-  const [address, setAddress] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [verifyingTasks, setVerifyingTasks] = useState<{ [taskId: string]: number }>({});
-  const [inviteCodeInput, setInviteCodeInput] = useState('');
-  const [claimingInvite, setClaimingInvite] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [activeModal, setActiveModal] = useState<'howToPlay' | 'tasks' | 'referrals' | 'about' | null>(null);
-  const toast = useToast();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading) {
-      if (!user || !user.twitterLinked) {
-        setShowOnboarding(true);
-      }
-    }
-  }, [loading, user]);
-
-  const fetchUser = async () => {
-    try {
-      const res = await fetch('/api/auth/me');
-      if (res.ok) {
-        const data = await res.json();
-        setAddress(data.address);
-        setUser(data.user);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTasks = async () => {
-    try {
-      const res = await fetch('/api/tasks');
-      if (res.ok) {
-        const data = await res.json();
-        setTasks(data.tasks || []);
-      }
-    } catch (e) {
-      console.error('Error fetching tasks:', e);
-    }
-  };
-
-  useEffect(() => {
-    fetchUser();
-    fetchTasks();
-  }, []);
-
-  const handleTaskClick = (task: any) => {
-    if (!user) return;
-    const isCompleted = user.completedTasks?.some(
-      (ct: any) =>
-        (ct._id || ct).toString() === (task._id || '').toString() || ct.taskId === task.taskId
-    );
-
-    if (task.type === 'referral' && isCompleted) {
-      soundManager.playClick();
-      if (task.taskUrl) {
-        window.open(task.taskUrl, '_blank');
-      }
-      toast({
-        title: 'Referral link opened!',
-        description: 'Share with friends to grow the BLNK community.',
-        status: 'info',
-        duration: 3000,
-      });
-      return;
-    }
-
-    if (isCompleted || verifyingTasks[task.taskId]) return;
-
-    soundManager.playClick();
-    if (task.taskUrl) {
-      window.open(task.taskUrl, '_blank');
-    }
-
-    let secondsLeft = 5;
-    setVerifyingTasks((prev) => ({ ...prev, [task.taskId]: secondsLeft }));
-
-    const interval = setInterval(async () => {
-      secondsLeft -= 1;
-      if (secondsLeft > 0) {
-        setVerifyingTasks((prev) => ({ ...prev, [task.taskId]: secondsLeft }));
-      } else {
-        clearInterval(interval);
-        setVerifyingTasks((prev) => {
-          const copy = { ...prev };
-          delete copy[task.taskId];
-          return copy;
-        });
-
-        try {
-          const res = await fetch('/api/tasks/complete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskId: task.taskId }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            soundManager.playWin();
-            toast({
-              title: `Task verified! +${task.rewardAmount} Coins`,
-              status: 'success',
-              duration: 3000,
-            });
-            setUser((prevUser: any) => {
-              if (!prevUser) return null;
-              return {
-                ...prevUser,
-                coins: data.coins,
-                twitterLinked: task.taskId === 'twitter_connect' ? true : prevUser.twitterLinked,
-                twitterHandle: task.taskId === 'twitter_connect' ? (prevUser.twitterHandle || '@BLNK_Member') : prevUser.twitterHandle,
-                completedTasks: [...(prevUser.completedTasks || []), task],
-              };
-            });
-          } else {
-            toast({ title: data.message || 'Task verification failed', status: 'error' });
-          }
-        } catch (err) {
-          toast({ title: 'Failed to complete task', status: 'error' });
-        }
-      }
-    }, 1000);
-  };
-
-  const connectWallet = async () => {
-    soundManager.playClick();
-    try {
-      if (!window.ethereum) {
-        toast({ title: 'MetaMask not found', status: 'error' });
-        return;
-      }
-      const { BrowserProvider, getAddress } = await import('ethers');
-      const { SiweMessage } = await import('siwe');
-
-      const provider = new BrowserProvider(window.ethereum);
-      const accounts = await provider.send('eth_requestAccounts', []);
-      const address = getAddress(accounts[0]);
-
-      const nonceRes = await fetch('/api/auth/nonce');
-      const nonce = await nonceRes.text();
-
-      const network = await provider.getNetwork();
-      const message = new SiweMessage({
-        domain: window.location.host,
-        address,
-        statement: 'Sign in with Ethereum to BLNK',
-        uri: window.location.origin,
-        version: '1',
-        chainId: Number(network.chainId),
-        nonce,
-      });
-
-      const signer = await provider.getSigner();
-      const signature = await signer.signMessage(message.prepareMessage());
-
-      const verifyRes = await fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, signature }),
-      });
-
-      if (!verifyRes.ok) {
-        const errorData = await verifyRes.json();
-        throw new Error(errorData.message || 'Error verifying message');
-      }
-      
-      toast({ title: 'Successfully signed in', status: 'success' });
-      soundManager.playWin();
-      fetchUser();
-    } catch (e: any) {
-      toast({ title: e.message || 'Error connecting', status: 'error' });
-    }
-  };
-
-  const handleLogout = async () => {
-    soundManager.playClick();
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      setUser(null);
-      setAddress(null);
-      setTasks([]);
-      toast({ title: 'Disconnected', status: 'info', duration: 2000 });
-    } catch (e) {
-      toast({ title: 'Logout failed', status: 'error' });
-    }
-  };
-
-  const handleLinkTwitterModal = async (username: string): Promise<boolean> => {
-    soundManager.playClick();
-    try {
-      const res = await fetch('/api/tasks/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskId: 'twitter_connect', data: { username } }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        soundManager.playWin();
-        toast({
-          title: 'Twitter Linked! +10 Coins',
-          status: 'success',
-          duration: 3000,
-        });
-        await fetchUser();
-        return true;
-      }
-      return false;
-    } catch (err) {
-      toast({ title: 'Failed to link Twitter', status: 'error' });
-      return false;
-    }
-  };
-
-  const handleClaimCardInvite = async () => {
-    if (!inviteCodeInput.trim()) return;
-    setClaimingInvite(true);
-    soundManager.playClick();
-    try {
-      const res = await fetch('/api/referral/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ referralCode: inviteCodeInput.trim() }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        soundManager.playWin();
-        toast({
-          title: 'Referral Applied!',
-          description: data.message || 'You earned +15 COINS welcome bonus.',
-          status: 'success',
-          duration: 4000,
-        });
-        setInviteCodeInput('');
-        await fetchUser();
-      } else {
-        toast({
-          title: 'Cannot Apply Code',
-          description: data.message || 'Invalid code or already applied.',
-          status: 'error',
-          duration: 3000,
-        });
-      }
-    } catch (e) {
-      toast({ title: 'Failed to claim referral code', status: 'error' });
-    }
-  };
-
-  return (
+new_ui = """  return (
     <Box minH="100vh" bg="gray.900" color="white" position="relative" overflow="hidden" display="flex" flexDirection="column" fontFamily="var(--font-inter), sans-serif">
+      
       {/* Background Ambient Glow */}
       <Box position="absolute" top="-20%" left="-10%" w="50vw" h="50vw" bg="purple.600" filter="blur(150px)" opacity={0.5} borderRadius="full" pointerEvents="none" />
       <Box position="absolute" bottom="-20%" right="-10%" w="50vw" h="50vw" bg="teal.400" filter="blur(150px)" opacity={0.4} borderRadius="full" pointerEvents="none" />
@@ -571,3 +315,11 @@ export default function Dashboard() {
     </Box>
   );
 }
+"""
+
+content = content[:start_idx] + new_ui
+
+with open('/Users/ayushpahuja/Downloads/ClawMachine_Template/game/blnk-flywheel/app/page.tsx', 'w') as f:
+    f.write(content)
+
+print("Restored neon UI theme to app/page.tsx")

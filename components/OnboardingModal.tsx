@@ -91,13 +91,13 @@ export default function OnboardingModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg" closeOnOverlayClick={false}>
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg" closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay bg="rgba(0, 0, 0, 0.88)" backdropFilter="blur(8px)" />
       <ModalContent
         bg="#0e0514"
         border="2px solid #d946ef"
         boxShadow="0 0 35px rgba(236, 72, 153, 0.35), inset 0 0 15px rgba(236, 72, 153, 0.15)"
-        borderRadius="none"
+        borderRadius="3xl"
         p={6}
         color="white"
         position="relative"
@@ -118,7 +118,7 @@ export default function OnboardingModal({
           <VStack align="stretch" gap={6}>
             <VStack align="center" gap={1}>
               <Text
-                fontFamily="var(--font-pixel)"
+                fontWeight="medium"
                 fontSize="xs"
                 color="pink.400"
                 letterSpacing="2px"
@@ -127,7 +127,7 @@ export default function OnboardingModal({
                 SYSTEM ACCESS REQUIRED
               </Text>
               <Text
-                fontFamily="var(--font-retro)"
+                fontWeight="bold"
                 fontSize="3xl"
                 color="white"
                 textAlign="center"
@@ -147,7 +147,7 @@ export default function OnboardingModal({
                 borderColor={user ? '#d946ef' : '#a855f7'}
                 textAlign="center"
               >
-                <Text fontFamily="var(--font-pixel)" fontSize="3xs" color={user ? 'green.400' : 'yellow.400'}>
+                <Text fontWeight="medium" fontSize="3xs" color={user ? 'green.400' : 'yellow.400'}>
                   1. WALLET {user ? '✓' : 'REQUIRED'}
                 </Text>
               </Box>
@@ -161,7 +161,7 @@ export default function OnboardingModal({
                 textAlign="center"
               >
                 <Text
-                  fontFamily="var(--font-pixel)"
+                  fontWeight="medium"
                   fontSize="3xs"
                   color={user?.twitterLinked ? 'green.400' : 'gray.400'}
                 >
@@ -178,7 +178,7 @@ export default function OnboardingModal({
                 textAlign="center"
               >
                 <Text
-                  fontFamily="var(--font-pixel)"
+                  fontWeight="medium"
                   fontSize="3xs"
                   color={user?.referredBy ? 'green.400' : 'gray.400'}
                 >
@@ -201,10 +201,10 @@ export default function OnboardingModal({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </Icon>
                 <VStack gap={1}>
-                  <Text fontFamily="var(--font-retro)" fontSize="xl" color="white">
+                  <Text fontWeight="bold" fontSize="xl" color="white">
                     LINK CRYPTOGRAPHIC WALLET
                   </Text>
-                  <Text fontFamily="var(--font-mono)" fontSize="xs" color="gray.400">
+                  <Text color="gray.400" fontSize="xs">
                     Connect via SIWE to establish identity on the Whitelist Flywheel.
                   </Text>
                 </VStack>
@@ -212,7 +212,7 @@ export default function OnboardingModal({
                   w="full"
                   bg="#d946ef"
                   color="black"
-                  fontFamily="var(--font-pixel)"
+                  fontWeight="medium"
                   fontSize="2xs"
                   py={6}
                   _hover={{ bg: '#f472b6', boxShadow: '0 0 15px rgba(244, 114, 182, 0.4)' }}
@@ -236,10 +236,10 @@ export default function OnboardingModal({
                   <Icon viewBox="0 0 24 24" boxSize={8} color="#1da1f2" fill="currentColor">
                     <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
                   </Icon>
-                  <Text fontFamily="var(--font-retro)" fontSize="xl" color="white">
+                  <Text fontWeight="bold" fontSize="xl" color="white">
                     LINK TWITTER
                   </Text>
-                  <Text fontFamily="var(--font-mono)" fontSize="xs" color="gray.400">
+                  <Text color="gray.400" fontSize="xs">
                     Connect your X (Twitter) account to enable social tasks and claim +10 COINS.
                   </Text>
                 </VStack>
@@ -252,7 +252,6 @@ export default function OnboardingModal({
                     bg="#0e0514"
                     border="1px solid #1da1f2"
                     color="white"
-                    fontFamily="var(--font-mono)"
                     textAlign="center"
                     fontSize="md"
                     _placeholder={{ color: 'gray.600', fontSize: 'xs' }}
@@ -261,7 +260,7 @@ export default function OnboardingModal({
                     w="full"
                     bg="#1da1f2"
                     color="white"
-                    fontFamily="var(--font-pixel)"
+                    fontWeight="medium"
                     fontSize="2xs"
                     py={6}
                     _hover={{ bg: '#40a9f3', boxShadow: '0 0 15px rgba(29, 161, 242, 0.6)' }}
@@ -295,10 +294,10 @@ export default function OnboardingModal({
                   <Icon viewBox="0 0 24 24" boxSize={8} color="purple.400" fill="none" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
                   </Icon>
-                  <Text fontFamily="var(--font-retro)" fontSize="xl" color="white">
+                  <Text fontWeight="bold" fontSize="xl" color="white">
                     INVITATION REFERRAL
                   </Text>
-                  <Text fontFamily="var(--font-mono)" fontSize="xs" color="gray.400">
+                  <Text color="gray.400" fontSize="xs">
                     Enter an invitation referral code to claim +15 COINS welcome bonus.
                   </Text>
                 </VStack>
@@ -312,7 +311,6 @@ export default function OnboardingModal({
                       bg="#0e0514"
                       border="1px solid #d946ef"
                       color="pink.200"
-                      fontFamily="var(--font-mono)"
                       textAlign="center"
                       fontSize="md"
                       letterSpacing="3px"
@@ -322,7 +320,7 @@ export default function OnboardingModal({
                       w="full"
                       bg="#d946ef"
                       color="black"
-                      fontFamily="var(--font-pixel)"
+                      fontWeight="medium"
                       fontSize="2xs"
                       py={6}
                       isLoading={isClaiming}
@@ -334,14 +332,14 @@ export default function OnboardingModal({
                   </VStack>
                 ) : (
                   <VStack gap={3} align="center">
-                    <Text fontFamily="var(--font-pixel)" fontSize="2xs" color="pink.400">
+                    <Text fontWeight="medium" fontSize="2xs" color="pink.400">
                       ✓ REFERRAL APPLIED ({user.referredBy})
                     </Text>
                     <Button
                       w="full"
                       bg="#d946ef"
                       color="black"
-                      fontFamily="var(--font-pixel)"
+                      fontWeight="medium"
                       fontSize="2xs"
                       py={6}
                       _hover={{ bg: '#f472b6', boxShadow: '0 0 15px rgba(74, 222, 128, 0.6)' }}

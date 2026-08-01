@@ -150,9 +150,9 @@ function CoinArc({ visible }: { visible: boolean }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#6B4300',
-                fontWeight: 900,
+                
                 fontSize: '11px',
-                fontFamily: 'monospace',
+                fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif",
                 textShadow: '0 1px rgba(255,255,255,0.45)',
             }}>
                 ◈
@@ -300,15 +300,15 @@ export default function GamePage() {
         const outcome = outcomeCard?.outcome ?? '';
         const text = encodeURIComponent(
             outcome === 'GTD'
-                ? `just pulled GUARANTEED on @blnk_xyz 🎰 colour unlocked. grey world is done. free to play: blnk.xyz`
-                : `pulled FCFS on @blnk_xyz — racing the clock ⏳ colourful capsules. grey world. get in. free to play: blnk.xyz`
+                ? `one crack. and the grey doesn't hold anymore. colour doesn't ease in, it floods.`
+                : `not every pull hits. but the one that does breaks the grey wide open. pull, and find out.`
         );
         window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
     }, [outcomeCard]);
 
     const shareLossOnX = useCallback(() => {
         const text = encodeURIComponent(
-            `just tried my luck on the @blnk_xyz claw machine 🎰 colour unlocked. grey world is done. free to play: blnk.xyz`
+            `not every pull hits. most don't. but the one that does breaks the grey wide open. pull, and find out.`
         );
         window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
     }, []);
@@ -419,9 +419,9 @@ export default function GamePage() {
                         <SoundButton />
                         <div className="hud-coins-badge">
                             <span className="hud-coins-text" style={{
-                                fontFamily: 'var(--font-pixel)',
+                                fontWeight: "bold", fontFamily: "var(--font-inter), sans-serif",
                                 fontSize: '10px',
-                                fontWeight: 700,
+                                
                                 letterSpacing: '0.15em',
                                 color: '#edc75b',
                                 textShadow: '0 0 10px rgba(237, 199, 91, 0.4)',
@@ -468,8 +468,8 @@ export default function GamePage() {
                                     background: 'linear-gradient(135deg, rgba(20, 20, 25, 0.95) 0%, rgba(10, 10, 12, 0.95) 100%)',
                                     color: '#ffffff',
                                     fontSize: '12px',
-                                    fontWeight: 800,
-                                    fontFamily: 'var(--font-pixel)',
+                                    
+                                    fontWeight: "bold", fontFamily: "var(--font-inter), sans-serif",
                                     letterSpacing: '0.25em',
                                     cursor: 'pointer',
                                     textTransform: 'uppercase',
@@ -510,7 +510,7 @@ export default function GamePage() {
                                 padding: '6px 16px',
                                 backdropFilter: 'blur(10px)',
                                 fontSize: '9px',
-                                fontFamily: 'var(--font-pixel)',
+                                fontWeight: "bold", fontFamily: "var(--font-inter), sans-serif",
                                 color: '#edc75b',
                                 letterSpacing: '0.2em',
                                 textShadow: '0 0 10px rgba(237, 199, 91, 0.4)',
@@ -533,7 +533,7 @@ export default function GamePage() {
                         pointerEvents: 'none',
                     }}>
                         <span style={{
-                            fontFamily: 'monospace',
+                            fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif",
                             fontSize: '11px',
                             color: 'rgba(255,255,255,0.4)',
                             letterSpacing: '0.2em',
@@ -573,7 +573,7 @@ export default function GamePage() {
                         zIndex: 20, pointerEvents: 'none', animation: 'pulseRing 1.8s ease-in-out infinite',
                     }}>
                         <span style={{
-                            fontFamily: 'monospace', fontSize: '14px', fontWeight: 800,
+                            fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '14px', 
                             color: 'rgba(255,255,255,0.9)', letterSpacing: '0.25em',
                             textShadow: '0 0 20px rgba(255,255,255,0.2)',
                         }}>
@@ -629,22 +629,22 @@ export default function GamePage() {
                             {outcomeCard.isWin ? (
                                 <>
                                     <div style={{
-                                        fontFamily: 'monospace', fontSize: '10px', letterSpacing: '0.3em',
-                                        color: '#4ade80', textTransform: 'uppercase', fontWeight: 700,
+                                        fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '10px', letterSpacing: '0.3em',
+                                        color: '#4ade80', textTransform: 'uppercase', 
                                         textShadow: '0 0 12px rgba(74, 222, 128, 0.5)',
                                     }}>
                                         ✦ REWARD UNLOCKED ✦
                                     </div>
                                     <div style={{
-                                        fontFamily: 'monospace', fontSize: '32px', fontWeight: 900,
+                                        fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '32px', 
                                         color: '#ffffff', letterSpacing: '0.08em', textTransform: 'uppercase',
                                         textShadow: '0 2px 15px rgba(74, 222, 128, 0.35)',
                                     }}>
                                         {outcomeCard.outcome}
                                     </div>
                                     <div style={{
-                                        fontFamily: 'monospace', fontSize: '13px', color: '#e5e7eb',
-                                        lineHeight: 1.65, letterSpacing: '0.03em', fontWeight: 500,
+                                        fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '13px', color: '#e5e7eb',
+                                        lineHeight: 1.65, letterSpacing: '0.03em', 
                                     }}>
                                         You have extracted a rare whitelist spot from the machine.
                                         <br />Post on X to claim your reward.
@@ -655,8 +655,8 @@ export default function GamePage() {
                                             width: '100%', padding: '16px', borderRadius: '14px',
                                             border: '1px solid rgba(74, 222, 128, 0.5)',
                                             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                            color: '#ffffff', fontFamily: 'monospace', fontSize: '13px',
-                                            fontWeight: 800, letterSpacing: '0.15em', cursor: 'pointer',
+                                            color: '#ffffff', fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '13px',
+                                             letterSpacing: '0.15em', cursor: 'pointer',
                                             textTransform: 'uppercase',
                                             boxShadow: '0 8px 25px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
                                             transition: 'all 0.2s ease',
@@ -670,9 +670,9 @@ export default function GamePage() {
                                             width: '100%', padding: '14px', borderRadius: '12px',
                                             border: '1px solid rgba(255,255,255,0.12)',
                                             background: 'rgba(255,255,255,0.04)',
-                                            color: '#d1d5db', fontFamily: 'monospace',
+                                            color: '#d1d5db', fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif",
                                             fontSize: '11px', letterSpacing: '0.15em', cursor: 'pointer',
-                                            textTransform: 'uppercase', fontWeight: 600,
+                                            textTransform: 'uppercase', 
                                         }}
                                     >
                                         ← RETURN TO MACHINE
@@ -680,13 +680,13 @@ export default function GamePage() {
                                 </>
                             ) : (
                                 <>
-                                    <div style={{ fontFamily: 'monospace', fontSize: '9px', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>
+                                    <div style={{ fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '9px', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>
                                         THE CLAW HAS SPOKEN
                                     </div>
-                                    <div style={{ fontFamily: 'monospace', fontSize: '28px', fontWeight: 900, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                                    <div style={{ fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '28px',  color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                                         EMPTY
                                     </div>
-                                    <div style={{ fontFamily: 'monospace', fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.7, letterSpacing: '0.05em' }}>
+                                    <div style={{ fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.7, letterSpacing: '0.05em' }}>
                                         The capsule was empty this time. Grey world wins this round.
                                     </div>
                                     <button
@@ -695,9 +695,9 @@ export default function GamePage() {
                                             width: '100%', padding: '14px', borderRadius: '12px',
                                             border: '1px solid rgba(255,255,255,0.12)',
                                             background: 'rgba(255,255,255,0.04)',
-                                            color: '#d1d5db', fontFamily: 'monospace',
+                                            color: '#d1d5db', fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif",
                                             fontSize: '11px', letterSpacing: '0.15em', cursor: 'pointer',
-                                            textTransform: 'uppercase', fontWeight: 600,
+                                            textTransform: 'uppercase', 
                                         }}
                                     >
                                         SHARE TO TWITTER
@@ -710,8 +710,8 @@ export default function GamePage() {
                                             width: '100%', padding: '16px', borderRadius: '12px',
                                             border: '1px solid rgba(236, 72, 153, 0.5)',
                                             background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
-                                            color: '#fff', fontFamily: 'monospace', fontSize: '12px',
-                                            fontWeight: 800, letterSpacing: '0.18em', cursor: 'pointer',
+                                            color: '#fff', fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '12px',
+                                             letterSpacing: '0.18em', cursor: 'pointer',
                                             textTransform: 'uppercase',
                                         }}
                                     >
@@ -729,8 +729,8 @@ export default function GamePage() {
                                             width: '100%', padding: '16px', borderRadius: '12px',
                                             border: '1px solid rgba(255,255,255,0.12)',
                                             background: 'rgba(255,255,255,0.06)',
-                                            color: '#fff', fontFamily: 'monospace', fontSize: '12px',
-                                            fontWeight: 800, letterSpacing: '0.18em', cursor: 'pointer',
+                                            color: '#fff', fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '12px',
+                                             letterSpacing: '0.18em', cursor: 'pointer',
                                             textTransform: 'uppercase',
                                         }}
                                     >

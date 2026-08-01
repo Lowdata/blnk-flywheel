@@ -306,6 +306,13 @@ export default function GamePage() {
         window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
     }, [outcomeCard]);
 
+    const shareLossOnX = useCallback(() => {
+        const text = encodeURIComponent(
+            `just tried my luck on the @blnk_xyz claw machine 🎰 colour unlocked. grey world is done. free to play: blnk.xyz`
+        );
+        window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+    }, []);
+
     if (!mounted) {
         return null;
     }
@@ -681,8 +688,35 @@ export default function GamePage() {
                                     </div>
                                     <div style={{ fontFamily: 'monospace', fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.7, letterSpacing: '0.05em' }}>
                                         The capsule was empty this time. Grey world wins this round.
-                                        <br />Refer friends for more coins and try again.
                                     </div>
+                                    <button
+                                        onClick={shareLossOnX}
+                                        style={{
+                                            width: '100%', padding: '14px', borderRadius: '12px',
+                                            border: '1px solid rgba(255,255,255,0.12)',
+                                            background: 'rgba(255,255,255,0.04)',
+                                            color: '#d1d5db', fontFamily: 'monospace',
+                                            fontSize: '11px', letterSpacing: '0.15em', cursor: 'pointer',
+                                            textTransform: 'uppercase', fontWeight: 600,
+                                        }}
+                                    >
+                                        SHARE TO TWITTER
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            router.push('/');
+                                        }}
+                                        style={{
+                                            width: '100%', padding: '16px', borderRadius: '12px',
+                                            border: '1px solid rgba(236, 72, 153, 0.5)',
+                                            background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+                                            color: '#fff', fontFamily: 'monospace', fontSize: '12px',
+                                            fontWeight: 800, letterSpacing: '0.18em', cursor: 'pointer',
+                                            textTransform: 'uppercase',
+                                        }}
+                                    >
+                                        INVITE A FRIEND (+3 COINS)
+                                    </button>
                                     <button
                                         onClick={() => {
                                             if ((user?.coins ?? 0) < 3) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Button, Flex, Heading, Text, VStack, HStack, SimpleGrid, useToast, Input } from '@chakra-ui/react';
+import { Box, Button, Flex, Heading, Text, VStack, HStack, SimpleGrid, useToast, Input, Modal, ModalOverlay, ModalContent, ModalBody, ModalCloseButton } from '@chakra-ui/react';
 
 import { useRouter } from 'next/navigation';
 import SpotlightCard from '@/components/SpotlightCard';
@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [claimingInvite, setClaimingInvite] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [activeModal, setActiveModal] = useState<'howToPlay' | 'tasks' | 'referrals' | null>(null);
   const toast = useToast();
   const router = useRouter();
 
@@ -270,7 +271,7 @@ export default function Dashboard() {
   };
 
   return (
-    <Box minH="100vh" w="100%" bg="#060d08" color="white" position="relative" pb={20} style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', overflowY: 'auto', overscrollBehaviorY: 'auto' }}>
+    <Box minH="100vh" w="100%" bgGradient="linear(to-br, #11051c, #06020a, #1a082b)" color="white" position="relative" pb={20} style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', overflowY: 'auto', overscrollBehaviorY: 'auto' }} display="flex" flexDirection="column">
       {/* Old CRT Monochrome Phosphor Green Scanline / Grid Background */}
       <Box
         position="absolute"
@@ -279,14 +280,14 @@ export default function Dashboard() {
         opacity={0.12}
         style={{
           backgroundImage: `
-            linear-gradient(to right, rgba(34, 197, 94, 0.25) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(34, 197, 94, 0.25) 1px, transparent 1px)
+            linear-gradient(to right, rgba(236, 72, 153, 0.20) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(236, 72, 153, 0.20) 1px, transparent 1px)
           `,
           backgroundSize: '32px 32px',
         }}
       />
 
-      <VStack gap={10} align="center" maxW="container.xl" mx="auto" px={{ base: 4, md: 8 }} py={8} position="relative" zIndex={10}>
+      <VStack gap={10} align="center" maxW="container.xl" mx="auto" px={{ base: 4, md: 8 }} py={8} position="relative" zIndex={10} flex={1} w="full" justify="center">
         
         {/* Retro Header Bar with Sound Mute & Title */}
         <Flex w="full" justify="space-between" align="center" wrap="wrap" gap={4}>
@@ -295,13 +296,13 @@ export default function Dashboard() {
               size="md"
               fontFamily="var(--font-pixel)"
               letterSpacing="0.1em"
-              color="green.400"
-              textShadow="2px 2px 0px #052e16"
+              color="pink.400"
+              textShadow="2px 2px 0px #2e0524"
             >
               BLNK
             </Heading>
-            <Box bg="#0f2416" border="2px solid" borderColor="#166534" px={2} py={1}>
-              <Text fontSize="xs" fontFamily="var(--font-pixel)" color="yellow.400">
+            <Box bg="#1f1029" border="2px solid" borderColor="#701a75" px={2} py={1}>
+              <Text fontSize="xs" fontFamily="var(--font-pixel)" color="purple.400">
                 v1.0
               </Text>
             </Box>
@@ -353,133 +354,59 @@ export default function Dashboard() {
             size={{ base: 'lg', md: 'xl' }}
             fontFamily="var(--font-pixel)"
             letterSpacing="0.08em"
-            color="green.300"
-            textShadow="3px 3px 0px #14532d"
+            bgGradient="linear(to-r, pink.400, purple.500)"
+            bgClip="text"
+            filter="drop-shadow(3px 3px 0px #4a044e)"
             lineHeight="1.5"
           >
             THE WHITELIST FLYWHEEL
           </Heading>
-          <Text fontSize={{ base: 'xl', md: '2xl' }} fontFamily="var(--font-retro)" color="green.200" maxW="2xl" letterSpacing="0.05em">
+          <Text fontSize={{ base: 'xl', md: '2xl' }} fontFamily="var(--font-retro)" color="pink.200" maxW="2xl" letterSpacing="0.05em">
             A next-gen interactive whitelist flywheel on Ethereum. Link socials, earn coins, and drop the claw to capture rare rewards.
           </Text>
         </VStack>
 
-        {/* Retro RPG Arcade Quest 'How to Play' Section with Phosphor Green Spotlight */}
-        <Box w="full" maxW="4xl">
-          <SpotlightCard
-            p={{ base: 6, md: 8 }}
-            spotlightColor="rgba(34, 197, 94, 0.35)"
-            bg="#0b1810"
-            border="4px solid"
-            borderColor="#166534"
-            boxShadow="0 6px 0 #050a06, inset 0 2px 0 rgba(74, 222, 128, 0.15)"
-            rounded="none"
+        {/* Retro Navigation Icons */}
+        <HStack gap={4} pt={4} justify="center" wrap="wrap">
+          <Button
+            size="md"
+            className="pixel-button"
+            fontFamily="var(--font-pixel)"
+            fontSize="xs"
+            color="white"
+            onClick={() => setActiveModal('howToPlay')}
+            bg="#1f1029" border="2px solid #701a75" rounded="none"
+            _hover={{ borderColor: '#d946ef', transform: 'translateY(-2px)' }}
           >
-            <VStack gap={8} w="full">
-              {/* Header Badge */}
-              <VStack gap={2}>
-                <HStack gap={3} color="yellow.400" fontFamily="var(--font-pixel)" fontSize={{ base: 'sm', md: 'md' }}>
-                  <span>🛡️</span>
-                  <Text letterSpacing="0.1em" textTransform="uppercase">HOW TO PLAY</Text>
-                  <span>🛡️</span>
-                </HStack>
-                <Text fontSize="xl" fontFamily="var(--font-retro)" color="green.200">
-                  Everything the scrolls know, in three steps.
-                </Text>
-              </VStack>
+            ❓ HOW TO PLAY
+          </Button>
+          <Button
+            size="md"
+            className="pixel-button"
+            fontFamily="var(--font-pixel)"
+            fontSize="xs"
+            color="white"
+            onClick={() => setActiveModal('tasks')}
+            bg="#1f1029" border="2px solid #701a75" rounded="none"
+            _hover={{ borderColor: '#d946ef', transform: 'translateY(-2px)' }}
+          >
+            ⚔️ TASKS
+          </Button>
+          <Button
+            size="md"
+            className="pixel-button"
+            fontFamily="var(--font-pixel)"
+            fontSize="xs"
+            color="white"
+            onClick={() => setActiveModal('referrals')}
+            bg="#1f1029" border="2px solid #701a75" rounded="none"
+            _hover={{ borderColor: '#d946ef', transform: 'translateY(-2px)' }}
+          >
+            📜 REFERRALS
+          </Button>
+        </HStack>
 
-              {/* Quest Subtitle */}
-              <VStack gap={1}>
-                <HStack color="green.400" fontFamily="var(--font-pixel)" fontSize="xs">
-                  <span>⚔️</span>
-                  <Text textTransform="uppercase" letterSpacing="0.1em">THE QUEST</Text>
-                  <span>⚔️</span>
-                </HStack>
-                <Text fontSize={{ base: 'lg', md: 'xl' }} fontFamily="var(--font-retro)" color="green.100" textAlign="center" maxW="xl">
-                  A whitelist flywheel on BLNK. Spend Coins, drop the claw, and cut a path through colorful prize capsules — each grab a chance to unlock your spot.
-                </Text>
-              </VStack>
 
-              {/* 3 Step Quest Guide - Retro CRT Green Arcade Slots */}
-              <SimpleGrid columns={{ base: 1, md: 3 }} gap={5} w="full">
-                <SpotlightCard
-                  p={5}
-                  spotlightColor="rgba(74, 222, 128, 0.4)"
-                  bg="#0f2416"
-                  border="2px solid"
-                  borderColor="#166534"
-                  boxShadow="0 3px 0 #050a06"
-                  rounded="none"
-                >
-                  <VStack align="start" gap={3}>
-                    <HStack color="green.300" fontFamily="var(--font-pixel)" fontSize="xs">
-                      <span>1 · CREATE</span>
-                    </HStack>
-                    <Text fontSize="lg" fontFamily="var(--font-retro)" color="green.50" lineHeight="1.4">
-                      Link your wallet and Twitter. Your champion enters the flywheel with starting Coins.
-                    </Text>
-                  </VStack>
-                </SpotlightCard>
-
-                <SpotlightCard
-                  p={5}
-                  spotlightColor="rgba(245, 158, 11, 0.35)"
-                  bg="#0f2416"
-                  border="2px solid"
-                  borderColor="#d97706"
-                  boxShadow="0 3px 0 #050a06"
-                  rounded="none"
-                >
-                  <VStack align="start" gap={3}>
-                    <HStack color="yellow.400" fontFamily="var(--font-pixel)" fontSize="xs">
-                      <span>2 · FIGHT</span>
-                    </HStack>
-                    <Text fontSize="lg" fontFamily="var(--font-retro)" color="green.50" lineHeight="1.4">
-                      Take on the claw machine. Position the joystick over the pile and drop to grab a prize capsule.
-                    </Text>
-                  </VStack>
-                </SpotlightCard>
-
-                <SpotlightCard
-                  p={5}
-                  spotlightColor="rgba(34, 197, 94, 0.4)"
-                  bg="#0f2416"
-                  border="2px solid"
-                  borderColor="#15803d"
-                  boxShadow="0 3px 0 #050a06"
-                  rounded="none"
-                >
-                  <VStack align="start" gap={3}>
-                    <HStack color="green.400" fontFamily="var(--font-pixel)" fontSize="xs">
-                      <span>3 · GROW</span>
-                    </HStack>
-                    <Text fontSize="lg" fontFamily="var(--font-retro)" color="green.50" lineHeight="1.4">
-                      Click your captured capsule to reveal what&apos;s inside. Pull color drops to secure your whitelist spot.
-                    </Text>
-                  </VStack>
-                </SpotlightCard>
-              </SimpleGrid>
-
-              {/* Grand Prize Banner */}
-              <Box
-                w="full"
-                p={4}
-                bg="#0b1810"
-                border="2px solid"
-                borderColor="yellow.500"
-                boxShadow="0 3px 0 #050a06"
-                textAlign="center"
-              >
-                <Text fontFamily="var(--font-pixel)" fontSize="xs" color="yellow.300">
-                  🏆 PULL GUARANTEED AND WIN THE GRAND PRIZE WHITELIST
-                </Text>
-                <Text fontSize="lg" fontFamily="var(--font-retro)" color="green.200" mt={1}>
-                  Nobody gets there on the first try. That is the point.
-                </Text>
-              </Box>
-            </VStack>
-          </SpotlightCard>
-        </Box>
 
         {/* User Dashboard / Wallet / Action Buttons */}
         {!address ? (
@@ -503,10 +430,10 @@ export default function Dashboard() {
             <SpotlightCard
               p={6}
               spotlightColor="rgba(74, 222, 128, 0.35)"
-              bg="#0b1810"
+              bg="#13091c"
               border="4px solid"
-              borderColor="#166534"
-              boxShadow="0 4px 0 #050a06"
+              borderColor="#701a75"
+              boxShadow="0 4px 0 #08030d"
               rounded="none"
             >
               <Flex
@@ -516,7 +443,7 @@ export default function Dashboard() {
                 gap={4}
               >
                 <VStack align="start" gap={1}>
-                  <Text color="green.400" fontSize="xs" fontFamily="var(--font-pixel)" textTransform="uppercase">
+                  <Text color="pink.400" fontSize="xs" fontFamily="var(--font-pixel)" textTransform="uppercase">
                     CHAMPION WALLET
                   </Text>
                   <Text fontFamily="var(--font-retro)" fontSize="2xl" color="white">
@@ -524,10 +451,10 @@ export default function Dashboard() {
                   </Text>
                 </VStack>
                 <VStack align={{ base: 'start', sm: 'end' }} gap={1}>
-                  <Text color="yellow.400" fontSize="xs" fontFamily="var(--font-pixel)" textTransform="uppercase">
+                  <Text color="purple.400" fontSize="xs" fontFamily="var(--font-pixel)" textTransform="uppercase">
                     YOUR COINS
                   </Text>
-                  <Heading size="md" fontFamily="var(--font-pixel)" color="yellow.300">
+                  <Heading size="md" fontFamily="var(--font-pixel)" color="purple.300">
                     ◈ {user?.coins || 0}
                   </Heading>
                 </VStack>
@@ -537,20 +464,179 @@ export default function Dashboard() {
             {/* Content Grid (Tasks & Referrals) */}
             <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
               {/* Tasks Card */}
-              <SpotlightCard
-                p={6}
-                spotlightColor="rgba(34, 197, 94, 0.35)"
-                bg="#0b1810"
+              
+
+              {/* Referrals Card - Arcade Cyberpunk Terminal Aesthetic */}
+              
+            </SimpleGrid>
+
+            {/* Play Claw Machine CTA Button - Redirects directly to /game */}
+            <Box pt={4}>
+              <Button
+                size="lg"
+                h="74px"
+                w="full"
+                className="pixel-button"
+                fontFamily="var(--font-pixel)"
+                fontSize={{ base: 'sm', md: 'md' }}
+                letterSpacing="widest"
+                rounded="none"
+                onClick={() => {
+                  soundManager.playClick();
+                  router.push('/game');
+                }}
+              >
+                🕹️ ENTER CLAW MACHINE
+              </Button>
+            </Box>
+          </VStack>
+        )}
+      </VStack>
+
+
+      <Modal isOpen={activeModal === 'howToPlay'} onClose={() => setActiveModal(null)} size="3xl" isCentered>
+        <ModalOverlay backdropFilter="blur(4px)" bg="blackAlpha.800" />
+        <ModalContent bg="transparent" boxShadow="none" my={0}>
+          <ModalCloseButton color="white" zIndex={20} />
+          <ModalBody p={0}>
+        <Box w="full" maxW="4xl">
+          <SpotlightCard
+            p={{ base: 6, md: 8 }}
+            spotlightColor="rgba(236, 72, 153, 0.35)"
+            bg="#13091c"
+            border="4px solid"
+            borderColor="#701a75"
+            boxShadow="0 6px 0 #08030d, inset 0 2px 0 rgba(74, 222, 128, 0.15)"
+            rounded="none"
+          >
+            <VStack gap={8} w="full">
+              {/* Header Badge */}
+              <VStack gap={2}>
+                <HStack gap={3} color="purple.400" fontFamily="var(--font-pixel)" fontSize={{ base: 'sm', md: 'md' }}>
+                  <span>🛡️</span>
+                  <Text letterSpacing="0.1em" textTransform="uppercase">HOW TO PLAY</Text>
+                  <span>🛡️</span>
+                </HStack>
+                <Text fontSize="xl" fontFamily="var(--font-retro)" color="pink.200">
+                  Everything the scrolls know, in three steps.
+                </Text>
+              </VStack>
+
+              {/* Quest Subtitle */}
+              <VStack gap={1}>
+                <HStack color="pink.400" fontFamily="var(--font-pixel)" fontSize="xs">
+                  <span>⚔️</span>
+                  <Text textTransform="uppercase" letterSpacing="0.1em">THE QUEST</Text>
+                  <span>⚔️</span>
+                </HStack>
+                <Text fontSize={{ base: 'lg', md: 'xl' }} fontFamily="var(--font-retro)" color="pink.100" textAlign="center" maxW="xl">
+                  A whitelist flywheel on BLNK. Spend Coins, drop the claw, and cut a path through colorful prize capsules — each grab a chance to unlock your spot.
+                </Text>
+              </VStack>
+
+              {/* 3 Step Quest Guide - Retro CRT Green Arcade Slots */}
+              <SimpleGrid columns={{ base: 1, md: 3 }} gap={5} w="full">
+                <SpotlightCard
+                  p={5}
+                  spotlightColor="rgba(236, 72, 153, 0.35)"
+                  bg="#1f1029"
+                  border="2px solid"
+                  borderColor="#701a75"
+                  boxShadow="0 3px 0 #08030d"
+                  rounded="none"
+                >
+                  <VStack align="start" gap={3}>
+                    <HStack color="pink.300" fontFamily="var(--font-pixel)" fontSize="xs">
+                      <span>1 · CREATE</span>
+                    </HStack>
+                    <Text fontSize="lg" fontFamily="var(--font-retro)" color="pink.50" lineHeight="1.4">
+                      Link your wallet and Twitter. Your champion enters the flywheel with starting Coins.
+                    </Text>
+                  </VStack>
+                </SpotlightCard>
+
+                <SpotlightCard
+                  p={5}
+                  spotlightColor="rgba(6, 182, 212, 0.35)"
+                  bg="#1f1029"
+                  border="2px solid"
+                  borderColor="#9333ea"
+                  boxShadow="0 3px 0 #08030d"
+                  rounded="none"
+                >
+                  <VStack align="start" gap={3}>
+                    <HStack color="purple.400" fontFamily="var(--font-pixel)" fontSize="xs">
+                      <span>2 · FIGHT</span>
+                    </HStack>
+                    <Text fontSize="lg" fontFamily="var(--font-retro)" color="pink.50" lineHeight="1.4">
+                      Take on the claw machine. Position the joystick over the pile and drop to grab a prize capsule.
+                    </Text>
+                  </VStack>
+                </SpotlightCard>
+
+                <SpotlightCard
+                  p={5}
+                  spotlightColor="rgba(168, 85, 247, 0.35)"
+                  bg="#1f1029"
+                  border="2px solid"
+                  borderColor="#86198f"
+                  boxShadow="0 3px 0 #08030d"
+                  rounded="none"
+                >
+                  <VStack align="start" gap={3}>
+                    <HStack color="pink.400" fontFamily="var(--font-pixel)" fontSize="xs">
+                      <span>3 · GROW</span>
+                    </HStack>
+                    <Text fontSize="lg" fontFamily="var(--font-retro)" color="pink.50" lineHeight="1.4">
+                      Click your captured capsule to reveal what&apos;s inside. Pull color drops to secure your whitelist spot.
+                    </Text>
+                  </VStack>
+                </SpotlightCard>
+              </SimpleGrid>
+
+              {/* Grand Prize Banner */}
+              <Box
+                w="full"
+                p={4}
+                bg="#13091c"
                 border="2px solid"
-                borderColor="#166534"
-                boxShadow="0 3px 0 #050a06"
+                borderColor="purple.500"
+                boxShadow="0 3px 0 #08030d"
+                textAlign="center"
+              >
+                <Text fontFamily="var(--font-pixel)" fontSize="xs" color="purple.300">
+                  🏆 PULL GUARANTEED AND WIN THE GRAND PRIZE WHITELIST
+                </Text>
+                <Text fontSize="lg" fontFamily="var(--font-retro)" color="pink.200" mt={1}>
+                  Nobody gets there on the first try. That is the point.
+                </Text>
+              </Box>
+            </VStack>
+          </SpotlightCard>
+        </Box>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={activeModal === 'tasks'} onClose={() => setActiveModal(null)} size="2xl" isCentered>
+        <ModalOverlay backdropFilter="blur(4px)" bg="blackAlpha.800" />
+        <ModalContent bg="transparent" boxShadow="none" my={0}>
+          <ModalCloseButton color="white" zIndex={20} />
+          <ModalBody p={0}>
+            <SpotlightCard
+                p={6}
+                spotlightColor="rgba(6, 182, 212, 0.35)"
+                bg="#13091c"
+                border="2px solid"
+                borderColor="#701a75"
+                boxShadow="0 3px 0 #08030d"
                 rounded="none"
               >
                 <HStack mb={2}>
-                  <Text color="green.400" fontFamily="var(--font-pixel)" fontSize="xs">⚔️</Text>
-                  <Heading size="xs" fontFamily="var(--font-pixel)" color="green.300">TASKS</Heading>
+                  <Text color="pink.400" fontFamily="var(--font-pixel)" fontSize="xs">⚔️</Text>
+                  <Heading size="xs" fontFamily="var(--font-pixel)" color="pink.300">TASKS</Heading>
                 </HStack>
-                <Text color="green.100" fontFamily="var(--font-retro)" fontSize="xl" mb={6}>
+                <Text color="pink.100" fontFamily="var(--font-retro)" fontSize="xl" mb={6}>
                   Complete tasks to earn coins and play the claw machine.
                 </Text>
                 
@@ -558,14 +644,14 @@ export default function Dashboard() {
                   {tasks.length === 0 ? (
                     <VStack gap={3.5} w="full" align="stretch">
                       {[1, 2, 3].map((i) => (
-                        <Box key={i} p={3.5} bg="#050a06" border="2px solid #166534">
+                        <Box key={i} p={3.5} bg="#08030d" border="2px solid #701a75">
                           <HStack gap={3}>
-                            <Box w="24px" h="24px" bg="#14532d" borderRadius="full" className="animate-pulse" />
+                            <Box w="24px" h="24px" bg="#4a044e" borderRadius="full" className="animate-pulse" />
                             <VStack align="start" gap={1} flex={1}>
-                              <Box w="60%" h="16px" bg="#14532d" className="animate-pulse" />
-                              <Box w="30%" h="10px" bg="#0f2416" className="animate-pulse" />
+                              <Box w="60%" h="16px" bg="#4a044e" className="animate-pulse" />
+                              <Box w="30%" h="10px" bg="#1f1029" className="animate-pulse" />
                             </VStack>
-                            <Box w="40px" h="24px" bg="#14532d" className="animate-pulse" />
+                            <Box w="40px" h="24px" bg="#4a044e" className="animate-pulse" />
                           </HStack>
                         </Box>
                       ))}
@@ -591,16 +677,16 @@ export default function Dashboard() {
                         <Flex
                           key={task.taskId || task._id}
                           p={3.5}
-                          bg={isCompleted && task.type !== 'referral' ? '#05130a' : '#050a06'}
+                          bg={isCompleted && task.type !== 'referral' ? '#0e0514' : '#08030d'}
                           border="2px solid"
-                          borderColor={isCompleted && task.type !== 'referral' ? '#166534' : isVerifying ? '#eab308' : '#22c55e'}
+                          borderColor={isCompleted && task.type !== 'referral' ? '#701a75' : isVerifying ? '#a855f7' : '#d946ef'}
                           justify="space-between"
                           align="center"
                           gap={3}
                           transition="all 0.2s"
                           _hover={
                             (!isCompleted || task.type === 'referral') && !isVerifying
-                              ? { borderColor: '#4ade80', transform: 'translateY(-1px)' }
+                              ? { borderColor: '#f472b6', transform: 'translateY(-1px)' }
                               : undefined
                           }
                         >
@@ -615,7 +701,7 @@ export default function Dashboard() {
                               >
                                 {task.description}
                               </Text>
-                              <Text color="green.300" fontFamily="var(--font-pixel)" fontSize="3xs">
+                              <Text color="pink.300" fontFamily="var(--font-pixel)" fontSize="3xs">
                                 +{task.rewardAmount} COINS
                               </Text>
                             </VStack>
@@ -627,11 +713,11 @@ export default function Dashboard() {
                                 size="sm"
                                 bg="transparent"
                                 border="1px solid"
-                                borderColor="#22c55e"
-                                color="green.300"
+                                borderColor="#d946ef"
+                                color="pink.300"
                                 fontFamily="var(--font-pixel)"
                                 fontSize="3xs"
-                                _hover={{ bg: '#14532d' }}
+                                _hover={{ bg: '#4a044e' }}
                                 onClick={() => handleTaskClick(task)}
                               >
                                 SHARE
@@ -640,10 +726,10 @@ export default function Dashboard() {
                               <Box
                                 px={3}
                                 py={1.5}
-                                bg="#14532d"
+                                bg="#4a044e"
                                 border="1px solid"
-                                borderColor="#22c55e"
-                                color="green.200"
+                                borderColor="#d946ef"
+                                color="pink.200"
                                 fontFamily="var(--font-pixel)"
                                 fontSize="3xs"
                               >
@@ -654,10 +740,10 @@ export default function Dashboard() {
                             <Box
                               px={3}
                               py={1.5}
-                              bg="#713f12"
+                              bg="#581c87"
                               border="1px solid"
-                              borderColor="#eab308"
-                              color="yellow.200"
+                              borderColor="#a855f7"
+                              color="purple.200"
                               fontFamily="var(--font-pixel)"
                               fontSize="3xs"
                               className="animate-pulse"
@@ -683,51 +769,58 @@ export default function Dashboard() {
                   )}
                 </VStack>
               </SpotlightCard>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
 
-              {/* Referrals Card - Arcade Cyberpunk Terminal Aesthetic */}
-              <SpotlightCard
+      <Modal isOpen={activeModal === 'referrals'} onClose={() => setActiveModal(null)} size="2xl" isCentered>
+        <ModalOverlay backdropFilter="blur(4px)" bg="blackAlpha.800" />
+        <ModalContent bg="transparent" boxShadow="none" my={0}>
+          <ModalCloseButton color="white" zIndex={20} />
+          <ModalBody p={0}>
+            <SpotlightCard
                 p={6}
-                spotlightColor="rgba(245, 158, 11, 0.35)"
-                bg="#0b1810"
+                spotlightColor="rgba(168, 85, 247, 0.35)"
+                bg="#13091c"
                 border="2px solid"
-                borderColor="#d97706"
-                boxShadow="0 3px 0 #050a06"
+                borderColor="#9333ea"
+                boxShadow="0 3px 0 #08030d"
                 rounded="none"
               >
                 <VStack align="stretch" gap={5}>
                   <Flex justify="space-between" align="center">
                     <HStack>
-                      <Text color="yellow.400" fontFamily="var(--font-pixel)" fontSize="xs">📜</Text>
-                      <Heading size="xs" fontFamily="var(--font-pixel)" color="yellow.400">REFERRAL SYSTEM</Heading>
+                      <Text color="purple.400" fontFamily="var(--font-pixel)" fontSize="xs">📜</Text>
+                      <Heading size="xs" fontFamily="var(--font-pixel)" color="purple.400">REFERRAL SYSTEM</Heading>
                     </HStack>
-                    <Box px={2} py={0.5} bg="#713f12" border="1px solid #eab308">
-                      <Text fontFamily="var(--font-pixel)" fontSize="3xs" color="yellow.200">
+                    <Box px={2} py={0.5} bg="#581c87" border="1px solid #a855f7">
+                      <Text fontFamily="var(--font-pixel)" fontSize="3xs" color="purple.200">
                         +30 COINS / INVITE
                       </Text>
                     </Box>
                   </Flex>
 
-                  <Text color="green.100" fontFamily="var(--font-retro)" fontSize="lg">
+                  <Text color="pink.100" fontFamily="var(--font-retro)" fontSize="lg">
                     Invite friends to expand your Whitelist Flywheel chances.
                   </Text>
                 
                   {/* Your Invite Code display with action buttons */}
-                  <Box p={4} bg="#0f2416" border="2px solid" borderColor="#166534" textAlign="center" position="relative">
-                    <Text color="green.300" fontSize="3xs" fontFamily="var(--font-pixel)" mb={2} textTransform="uppercase">
+                  <Box p={4} bg="#1f1029" border="2px solid" borderColor="#701a75" textAlign="center" position="relative">
+                    <Text color="pink.300" fontSize="3xs" fontFamily="var(--font-pixel)" mb={2} textTransform="uppercase">
                       YOUR EXCLUSIVE INVITE CODE
                     </Text>
-                    <Text fontWeight="black" fontSize="2xl" fontFamily="var(--font-pixel)" color="yellow.300" letterSpacing="widest" mb={3}>
+                    <Text fontWeight="black" fontSize="2xl" fontFamily="var(--font-pixel)" color="purple.300" letterSpacing="widest" mb={3}>
                       {user?.referralCode || '------'}
                     </Text>
                     <HStack justify="center" gap={3}>
                       <Button
                         size="xs"
-                        bg="#22c55e"
+                        bg="#d946ef"
                         color="black"
                         fontFamily="var(--font-pixel)"
                         fontSize="3xs"
                         px={4}
-                        _hover={{ bg: '#4ade80' }}
+                        _hover={{ bg: '#f472b6' }}
                         onClick={() => {
                           if (!user?.referralCode) return;
                           navigator.clipboard.writeText(user.referralCode);
@@ -739,13 +832,13 @@ export default function Dashboard() {
                       </Button>
                       <Button
                         size="xs"
-                        bg="#14532d"
-                        color="green.200"
-                        border="1px solid #22c55e"
+                        bg="#4a044e"
+                        color="pink.200"
+                        border="1px solid #d946ef"
                         fontFamily="var(--font-pixel)"
                         fontSize="3xs"
                         px={4}
-                        _hover={{ bg: '#166534' }}
+                        _hover={{ bg: '#701a75' }}
                         onClick={() => {
                           if (!user?.referralCode) return;
                           const url = `${window.location.origin}/?ref=${user.referralCode}`;
@@ -761,19 +854,19 @@ export default function Dashboard() {
 
                   {/* Live Referral Stats HUD */}
                   <SimpleGrid columns={2} gap={3}>
-                    <Box p={3} bg="#05130a" border="1px solid #166534" textAlign="center">
+                    <Box p={3} bg="#0e0514" border="1px solid #701a75" textAlign="center">
                       <Text color="gray.400" fontFamily="var(--font-pixel)" fontSize="3xs" mb={1}>
                         TOTAL REFERRED
                       </Text>
-                      <Text color="green.400" fontFamily="var(--font-pixel)" fontSize="md">
+                      <Text color="pink.400" fontFamily="var(--font-pixel)" fontSize="md">
                         {user?.referrals?.length || 0}
                       </Text>
                     </Box>
-                    <Box p={3} bg="#05130a" border="1px solid #166534" textAlign="center">
+                    <Box p={3} bg="#0e0514" border="1px solid #701a75" textAlign="center">
                       <Text color="gray.400" fontFamily="var(--font-pixel)" fontSize="3xs" mb={1}>
                         COINS EARNED
                       </Text>
-                      <Text color="yellow.400" fontFamily="var(--font-pixel)" fontSize="md">
+                      <Text color="purple.400" fontFamily="var(--font-pixel)" fontSize="md">
                         {(user?.referrals?.length || 0) * 30}
                       </Text>
                     </Box>
@@ -781,8 +874,8 @@ export default function Dashboard() {
 
 
                   {/* How It Works Guide */}
-                  <Box pt={2} borderTop="1px solid #166534">
-                    <Text color="yellow.400" fontFamily="var(--font-pixel)" fontSize="3xs" mb={2}>
+                  <Box pt={2} borderTop="1px solid #701a75">
+                    <Text color="purple.400" fontFamily="var(--font-pixel)" fontSize="3xs" mb={2}>
                       HOW IT WORKS
                     </Text>
                     <VStack align="stretch" gap={1.5} color="gray.300" fontFamily="var(--font-mono)" fontSize="xs">
@@ -793,30 +886,9 @@ export default function Dashboard() {
                   </Box>
                 </VStack>
               </SpotlightCard>
-            </SimpleGrid>
-
-            {/* Play Claw Machine CTA Button - Redirects directly to /game */}
-            <Box pt={4}>
-              <Button
-                size="lg"
-                h="74px"
-                w="full"
-                className="pixel-button"
-                fontFamily="var(--font-pixel)"
-                fontSize={{ base: 'sm', md: 'md' }}
-                letterSpacing="widest"
-                rounded="none"
-                onClick={() => {
-                  soundManager.playClick();
-                  router.push('/game');
-                }}
-              >
-                🕹️ ENTER CLAW MACHINE
-              </Button>
-            </Box>
-          </VStack>
-        )}
-      </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
 
       {/* Onboarding Modal Protocol (Wallet -> Twitter -> Invite Code) */}
       <OnboardingModal

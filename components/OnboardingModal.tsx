@@ -49,7 +49,10 @@ export default function OnboardingModal({
   }, [isOpen, user]);
 
   const handleClaimReferral = async () => {
-    if (!referralInput.trim()) return;
+    if (!referralInput.trim()) {
+      onClose();
+      return;
+    }
     setIsClaiming(true);
     try {
       const res = await fetch('/api/referral/claim', {
@@ -276,16 +279,6 @@ export default function OnboardingModal({
                     LINK TWITTER (+10 COINS)
                   </Button>
                 </VStack>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  color="gray.400"
-                  fontFamily="var(--font-pixel)"
-                  fontSize="3xs"
-                  onClick={() => setActiveStep(3)}
-                >
-                  SKIP FOR NOW →
-                </Button>
               </VStack>
             )}
 
@@ -325,32 +318,19 @@ export default function OnboardingModal({
                       letterSpacing="3px"
                       _placeholder={{ color: 'gray.600', letterSpacing: 'normal', fontSize: 'xs' }}
                     />
-                    <HStack w="full" gap={3}>
-                      <Button
-                        flex={1}
-                        bg="#d946ef"
-                        color="black"
-                        fontFamily="var(--font-pixel)"
-                        fontSize="3xs"
-                        isLoading={isClaiming}
-                        onClick={handleClaimReferral}
-                        _hover={{ bg: '#f472b6' }}
-                      >
-                        CLAIM (+15 COINS)
-                      </Button>
-                      <Button
-                        flex={1}
-                        bg="transparent"
-                        border="1px solid #d946ef"
-                        color="pink.400"
-                        fontFamily="var(--font-pixel)"
-                        fontSize="3xs"
-                        onClick={onClose}
-                        _hover={{ bg: '#4a044e' }}
-                      >
-                        ENTER FLYWHEEL →
-                      </Button>
-                    </HStack>
+                    <Button
+                      w="full"
+                      bg="#d946ef"
+                      color="black"
+                      fontFamily="var(--font-pixel)"
+                      fontSize="2xs"
+                      py={6}
+                      isLoading={isClaiming}
+                      onClick={handleClaimReferral}
+                      _hover={{ bg: '#f472b6' }}
+                    >
+                      {referralInput.trim() ? 'CLAIM & ENTER (+15 COINS)' : 'ENTER THE FLYWHEEL'}
+                    </Button>
                   </VStack>
                 ) : (
                   <VStack gap={3} align="center">

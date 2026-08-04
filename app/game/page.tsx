@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation';
 import { soundManager } from '@/lib/sound';
 import SoundButton from '@/components/SoundButton';
 import * as THREE from 'three';
+import { useDisconnect } from 'wagmi';
+import SmileyStampBadge from '@/components/SmileyStampBadge';
 
 /* --- Game Phase State Machine ----------------------------------------------
    intro        → Big "PLAY GAME" button. Controls hidden.
@@ -175,6 +177,7 @@ export default function GamePage() {
     const ref = useRef<any>(null);
     const toast = useToast();
     const router = useRouter();
+    const { disconnect } = useDisconnect();
     const pendingOutcomeRef = useRef<string | null>(null);
 
     useEffect(() => {
@@ -441,8 +444,18 @@ export default function GamePage() {
                         <button
                             className="hud-logout-btn"
                             onClick={async () => {
-                                await fetch('/api/auth/logout', { method: 'POST' });
-                                router.push('/');
+                                soundManager.playClick();
+                                try {
+                                    if (typeof window !== 'undefined') {
+                                        sessionStorage.setItem('blnk_did_logout', 'true');
+                                    }
+                                    await fetch('/api/auth/logout', { method: 'POST' });
+                                    disconnect();
+                                } catch (e) {
+                                    console.error('Logout error:', e);
+                                } finally {
+                                    router.push('/');
+                                }
                             }}
                             title="Disconnect wallet"
                         >
@@ -637,6 +650,7 @@ export default function GamePage() {
                         }}>
                             {outcomeCard.isWin ? (
                                 <>
+                                    <SmileyStampBadge size={120} />
                                     <div style={{
                                         fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '10px', letterSpacing: '0.3em',
                                         color: '#4ade80', textTransform: 'uppercase', 
@@ -713,7 +727,11 @@ export default function GamePage() {
                                     </button>
                                     <button
                                         onClick={() => {
-                                            router.push('/');
+                                            const origin = typeof window !== 'undefined' ? window.location.origin : 'https://blnk-flywheel.vercel.app';
+                                            const refUrl = `${origin}/?ref=${user?.referralCode || ''}`;
+                                            const tweetText = encodeURIComponent("I'm playing the @blnk_fi flywheel claw machine! 🕹️ Try your luck, grab exclusive drops, and join BLNK using my referral link:");
+                                            const intentUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(refUrl)}`;
+                                            window.open(intentUrl, '_blank');
                                         }}
                                         style={{
                                             width: '100%', padding: '16px', borderRadius: '12px',
@@ -724,7 +742,7 @@ export default function GamePage() {
                                             textTransform: 'uppercase',
                                         }}
                                     >
-                                        INVITE A FRIEND (+3 COINS)
+                                        INVITE A FRIEND (+30 COINS)
                                     </button>
                                     <button
                                         onClick={() => {

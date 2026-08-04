@@ -41,6 +41,9 @@ const silkscreen = Silkscreen({
 export const metadata = {
   title: 'BLNK Claw Machine',
   description: 'The Whitelist Flywheel',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
@@ -59,8 +62,8 @@ export default function RootLayout({
           <Spotlight />
           {children}
         </Providers>
-        <Analytics />
-        <SpeedInsights />
+        {process.env.VERCEL === '1' && <Analytics />}
+        {process.env.VERCEL === '1' && <SpeedInsights />}
       </body>
     </html>
   );

@@ -76,6 +76,15 @@ export default function OnboardingModal({
     }
   }, [isOpen, user, activeStep, onClose]);
 
+  useEffect(() => {
+    if (isOpen && typeof window !== 'undefined') {
+      const saved = localStorage.getItem('blnk_ref_code');
+      if (saved && !referralInput) {
+        setReferralInput(saved);
+      }
+    }
+  }, [isOpen]);
+
   const handleClaimReferral = async () => {
     if (!referralInput.trim()) {
       onClose();
@@ -90,6 +99,7 @@ export default function OnboardingModal({
       });
       const data = await res.json();
       if (res.ok) {
+        if (typeof window !== 'undefined') localStorage.removeItem('blnk_ref_code');
         toast({
           title: 'Referral Code Applied!',
           description: data.message || 'You earned +15 COINS welcome bonus.',

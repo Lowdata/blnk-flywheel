@@ -2,12 +2,13 @@ import type { NextConfig } from 'next';
 
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel.com;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel.com blob:;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   img-src 'self' data: https: blob:;
   font-src 'self' https://fonts.gstatic.com;
-  connect-src 'self' https://*.walletconnect.com wss://*.walletconnect.com https://*.walletconnect.org wss://*.walletconnect.org https://registry.walletconnect.com https://*.infura.io https://*.alchemy.com https://rpc.ankr.com https://cloudflare-eth.com https://eth-mainnet.g.alchemy.com https://eth-sepolia.g.alchemy.com https://polygon-mainnet.g.alchemy.com https://base-mainnet.g.alchemy.com;
-  frame-src 'self' https://*.walletconnect.com https://*.walletconnect.org;
+  connect-src 'self' https: wss: ws: http://localhost:* wss://localhost:* blob: data:;
+  worker-src 'self' blob: data:;
+  frame-src 'self' https:;
   object-src 'none';
   base-uri 'self';
   form-action 'self';

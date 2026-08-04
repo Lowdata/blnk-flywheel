@@ -40,6 +40,124 @@ const stateMap: IStateMap = {};
 const REVEAL_CAPSULE_DIAMETER = 0.42;
 const REWARD_CRYSTAL_RADIUS = REVEAL_CAPSULE_DIAMETER * 0.16;
 
+function createSmileyStampTexture(): THREE.CanvasTexture | null {
+    if (typeof document === 'undefined') return null;
+    const size = 1024;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+        ctx.clearRect(0, 0, size, size);
+
+        // 1. Solid Neon Green stamp background
+        ctx.fillStyle = '#00ff66';
+        ctx.beginPath();
+        ctx.roundRect(40, 40, 944, 944, 28);
+        ctx.fill();
+
+        // 2. Bold black border around the stamp
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 20;
+        ctx.stroke();
+
+        // 3. Inner vibrant yellow blotter square
+        ctx.fillStyle = '#ffde00';
+        ctx.fillRect(110, 110, 804, 804);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 16;
+        ctx.strokeRect(110, 110, 804, 804);
+
+        // 4. Subtle blotter grid lines (dashed pink/orange lines)
+        ctx.strokeStyle = 'rgba(236, 72, 153, 0.45)';
+        ctx.lineWidth = 5;
+        ctx.setLineDash([20, 20]);
+        for (let i = 1; i <= 4; i++) {
+            const p = 110 + (i * 804) / 5;
+            ctx.beginPath(); ctx.moveTo(p, 110); ctx.lineTo(p, 914); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(110, p); ctx.lineTo(914, p); ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // 5. Psychedelic Smiley Face in the center (512, 512)
+        ctx.beginPath();
+        ctx.arc(512, 512, 310, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffd700';
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 24;
+        ctx.stroke();
+
+        // Spiral eyes function (concentric swirly rings)
+        const drawSpiralEye = (cx: number, cy: number) => {
+            ctx.beginPath();
+            ctx.arc(cx, cy, 80, 0, Math.PI * 2);
+            ctx.fillStyle = '#00e676';
+            ctx.fill();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 14;
+            ctx.stroke();
+
+            for (let r = 58; r >= 16; r -= 20) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 1.8);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 11;
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#000000';
+            ctx.fill();
+        };
+
+        drawSpiralEye(395, 430);
+        drawSpiralEye(629, 430);
+
+        // Smile arc
+        ctx.beginPath();
+        ctx.arc(512, 520, 180, 0.15 * Math.PI, 0.85 * Math.PI, false);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 26;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Cheeky red tongue sticking out to the right
+        ctx.beginPath();
+        ctx.moveTo(570, 640);
+        ctx.bezierCurveTo(600, 725, 715, 725, 725, 655);
+        ctx.bezierCurveTo(730, 615, 690, 585, 650, 610);
+        ctx.fillStyle = '#ff0033';
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 18;
+        ctx.stroke();
+
+        // Tongue highlight
+        ctx.beginPath();
+        ctx.arc(670, 640, 22, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fill();
+
+        // 6. Punch out perforation holes along all 4 edges!
+        ctx.globalCompositeOperation = 'destination-out';
+        const numTeeth = 9;
+        for (let i = 0; i <= numTeeth; i++) {
+            const pos = 40 + (i / numTeeth) * 944;
+            ctx.beginPath(); ctx.arc(pos, 40, 28, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(pos, 984, 28, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(40, pos, 28, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(984, pos, 28, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.anisotropy = 16;
+    texture.needsUpdate = true;
+    return texture;
+}
+
 const Scene: ForwardRefRenderFunction<
     any,
     {
@@ -143,15 +261,18 @@ const Scene: ForwardRefRenderFunction<
         const scaleRatio = REVEAL_CAPSULE_DIAMETER / 2.6;
         const rewardGroup = new THREE.Group();
         rewardGroup.position.y = -0.3 * scaleRatio;
+        const stampTexture = createSmileyStampTexture();
         const crystal = new THREE.Mesh(
-            // Make a flat cylinder (radiusTop, radiusBottom, height, radialSegments)
-            new THREE.CylinderGeometry(0.8, 0.8, 0.1, 32),
+            new THREE.PlaneGeometry(1.55, 1.55),
             new THREE.MeshStandardMaterial({
-                color: 0xffd700,
-                metalness: 0.9,
-                roughness: 0.1,
-                emissive: 0xf59e0b,
-                emissiveIntensity: 0.5,
+                map: stampTexture || undefined,
+                transparent: true,
+                alphaTest: 0.05,
+                roughness: 0.25,
+                metalness: 0.05,
+                emissive: 0x00ff66,
+                emissiveIntensity: 0.25,
+                side: THREE.DoubleSide,
             })
         );
         crystal.castShadow = true;
@@ -160,7 +281,7 @@ const Scene: ForwardRefRenderFunction<
         (crystal.material as THREE.MeshStandardMaterial).depthWrite = true;
         rewardGroup.add(crystal);
 
-        const rewardLight = new THREE.PointLight(0xf59e0b, 0, 1.2);
+        const rewardLight = new THREE.PointLight(0x00ff66, 0, 1.4);
         rewardGroup.add(rewardLight);
 
         const sparkleCount = 35;
@@ -527,7 +648,7 @@ const Scene: ForwardRefRenderFunction<
                     reveal.rewardGroup.visible = isWin;
                     reveal.rewardGroup.position.y = THREE.MathUtils.lerp(-0.3 * reveal.scaleRatio, 0.35 * reveal.scaleRatio, oa);
                     reveal.crystal.rotation.y += delta * 1.5;
-                    reveal.crystal.rotation.x += delta * 0.8;
+                    reveal.crystal.rotation.x = Math.sin(clock.elapsedTime * 2) * 0.25;
                     reveal.crystal.scale.setScalar(THREE.MathUtils.lerp(0.2 * reveal.scaleRatio, 1.15 * reveal.scaleRatio, oa));
                     reveal.rewardLight.intensity = THREE.MathUtils.lerp(0, 4.5, oa);
                     reveal.sparkleMaterial.opacity = THREE.MathUtils.lerp(0, 0.9, oa);

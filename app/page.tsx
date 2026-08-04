@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Box, Button, Flex, Heading, Text, VStack, HStack,
+  Box, Button, Flex, Heading, Text, VStack, HStack, Input,
   useToast, Modal, ModalOverlay, ModalContent,
   ModalBody, ModalCloseButton, Skeleton,
   Tooltip,
@@ -25,6 +25,8 @@ export default function Dashboard() {
   const [siweLoading, setSiweLoading] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedReferral, setCopiedReferral] = useState(false);
+  const [dashboardRefInput, setDashboardRefInput] = useState('');
+  const [isClaimingRef, setIsClaimingRef] = useState(false);
   // Tracks whether the user explicitly logged out to prevent SIWE re-triggering
   const didLogout = useRef(false);
   const onboardingDismissed = useRef(false);
@@ -38,16 +40,25 @@ export default function Dashboard() {
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
 
+  const checkDidLogout = () => {
+    if (didLogout.current) return true;
+    if (typeof window !== 'undefined' && sessionStorage.getItem('blnk_did_logout') === 'true') {
+      didLogout.current = true;
+      return true;
+    }
+    return false;
+  };
+
   // --- Show onboarding only when connected but incomplete (not after logout) ---
   useEffect(() => {
-    if (!loading && isConnected && !didLogout.current && !onboardingDismissed.current) {
-      if (!user || !user.twitterLinked || !user.referredBy) {
+    if (!loading && isConnected && !checkDidLogout() && !onboardingDismissed.current) {
+      if (!user || !user.twitterLinked) {
         setShowOnboarding(true);
       } else {
         setShowOnboarding(false);
       }
     }
-    if (!isConnected || didLogout.current) {
+    if (!isConnected || checkDidLogout()) {
       setShowOnboarding(false);
       if (!isConnected) {
         onboardingDismissed.current = false;
@@ -113,7 +124,7 @@ export default function Dashboard() {
   // --- Trigger SIWE when wallet connects but no session user ----
   useEffect(() => {
     // Don't re-trigger SIWE if the user just explicitly logged out
-    if (didLogout.current) return;
+    if (checkDidLogout()) return;
     if (isConnected && address && !user && !loading && !siweLoading) {
       performSiweSignIn(address);
     }
@@ -151,10 +162,65 @@ export default function Dashboard() {
     fetchTasks();
   }, [user?._id]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref') || params.get('referral');
+      if (ref) {
+        localStorage.setItem('blnk_ref_code', ref.toUpperCase());
+        setDashboardRefInput(ref.toUpperCase());
+      } else {
+        const saved = localStorage.getItem('blnk_ref_code');
+        if (saved) setDashboardRefInput(saved);
+      }
+    }
+  }, []);
+
+  const handleDashboardClaimReferral = async () => {
+    if (!dashboardRefInput.trim()) return;
+    setIsClaimingRef(true);
+    try {
+      const res = await fetch('/api/referral/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referralCode: dashboardRefInput.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({
+          title: 'Referral Code Applied!',
+          description: data.message || 'You earned +15 COINS welcome bonus.',
+          status: 'success',
+          duration: 4000,
+        });
+        setDashboardRefInput('');
+        if (typeof window !== 'undefined') localStorage.removeItem('blnk_ref_code');
+        await fetchUser();
+      } else {
+        toast({
+          title: 'Error applying referral',
+          description: data.message || 'Failed to claim referral code.',
+          status: 'error',
+          duration: 4000,
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: 'Error',
+        description: e.message || 'Network error applying referral.',
+        status: 'error',
+        duration: 4000,
+      });
+    } finally {
+      setIsClaimingRef(false);
+    }
+  };
+
   // --- Connect wallet (opens RainbowKit modal) ------------------
   const connectWallet = () => {
     soundManager.playClick();
     didLogout.current = false; // allow SIWE triggers when reconnecting
+    if (typeof window !== 'undefined') sessionStorage.removeItem('blnk_did_logout');
     openConnectModal?.();
   };
 
@@ -163,6 +229,7 @@ export default function Dashboard() {
     soundManager.playClick();
     try {
       didLogout.current = true; // prevent SIWE re-trigger and Onboarding modal open
+      if (typeof window !== 'undefined') sessionStorage.setItem('blnk_did_logout', 'true');
       setShowOnboarding(false);
       await fetch('/api/auth/logout', { method: 'POST' });
       disconnect(); // Disconnect from wagmi/wallet
@@ -171,6 +238,7 @@ export default function Dashboard() {
       toast({ title: 'Disconnected', status: 'info', duration: 2000 });
     } catch (e) {
       didLogout.current = false; // allow retry
+      if (typeof window !== 'undefined') sessionStorage.removeItem('blnk_did_logout');
       toast({ title: 'Logout failed', status: 'error' });
     }
   };
@@ -631,45 +699,128 @@ export default function Dashboard() {
                       </HStack>
                     </Tooltip>
                   </Box>
+
+                  {!user?.referredBy ? (
+                    <Box pt={3} borderTop="1px solid" borderColor="whiteAlpha.200" w="full">
+                      <Text color="gray.400" fontSize="xs" mb={2}>
+                        Have a friend's code? Apply to claim +15 COINS:
+                      </Text>
+                      <HStack gap={2}>
+                        <Input
+                          size="sm"
+                          placeholder="ENTER CODE (e.g. BLNK-E4F1B3)"
+                          value={dashboardRefInput}
+                          onChange={(e) => setDashboardRefInput(e.target.value.toUpperCase())}
+                          bg="blackAlpha.600"
+                          borderColor="whiteAlpha.300"
+                          color="white"
+                          rounded="lg"
+                          fontFamily="monospace"
+                          fontSize="xs"
+                          _placeholder={{ color: 'whiteAlpha.400' }}
+                        />
+                        <Button
+                          size="sm"
+                          bg="white"
+                          color="black"
+                          fontWeight="bold"
+                          fontSize="xs"
+                          px={4}
+                          rounded="lg"
+                          isLoading={isClaimingRef}
+                          onClick={handleDashboardClaimReferral}
+                          _hover={{ bg: 'gray.200' }}
+                        >
+                          CLAIM
+                        </Button>
+                      </HStack>
+                    </Box>
+                  ) : (
+                    <Text fontSize="xs" color="green.400" fontWeight="semibold">
+                      ✓ Referred by {user.referredBy}
+                    </Text>
+                  )}
                 </VStack>
               </Box>
 
               {/* Referrals - compact strip on mobile */}
-              <Tooltip label={copiedReferral ? 'Copied!' : 'Tap to copy invite code'} placement="top">
-                <Flex
-                  display={{ base: 'flex', md: 'none' }}
-                  align="center"
-                  justify="space-between"
-                  bg="whiteAlpha.100"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                  px={4}
-                  py={3}
-                  rounded="xl"
-                  cursor="pointer"
-                  onClick={handleCopyReferral}
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: 'absolute',
-                    top: 0, left: 0, right: 0, h: '2px',
-                    bgGradient: 'linear(to-r, whiteAlpha.600, whiteAlpha.200)',
-                  }}
-                  _hover={{ bg: 'whiteAlpha.200' }}
-                  transition="all 0.2s"
-                >
-                  <HStack gap={2}>
-                    <Text fontSize="xs" color="whiteAlpha.700" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">Referral</Text>
-                    <Text fontWeight="black" fontSize="md" color="white" letterSpacing="widest" fontFamily="monospace">
-                      {user?.referralCode || '------'}
+              <Box display={{ base: 'block', md: 'none' }} w="full">
+                <Tooltip label={copiedReferral ? 'Copied!' : 'Tap to copy invite code'} placement="top">
+                  <Flex
+                    align="center"
+                    justify="space-between"
+                    bg="whiteAlpha.100"
+                    border="1px solid"
+                    borderColor="whiteAlpha.200"
+                    px={4}
+                    py={3}
+                    rounded="xl"
+                    cursor="pointer"
+                    onClick={handleCopyReferral}
+                    position="relative"
+                    overflow="hidden"
+                    _before={{
+                      content: '""',
+                      position: 'absolute',
+                      top: 0, left: 0, right: 0, h: '2px',
+                      bgGradient: 'linear(to-r, whiteAlpha.600, whiteAlpha.200)',
+                    }}
+                    _hover={{ bg: 'whiteAlpha.200' }}
+                    transition="all 0.2s"
+                  >
+                    <HStack gap={2}>
+                      <Text fontSize="xs" color="whiteAlpha.700" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">Referral</Text>
+                      <Text fontWeight="black" fontSize="md" color="white" letterSpacing="widest" fontFamily="monospace">
+                        {user?.referralCode || '------'}
+                      </Text>
+                    </HStack>
+                    <Text fontSize="xs" color={copiedReferral ? 'green.400' : 'whiteAlpha.400'} fontWeight="semibold">
+                      {copiedReferral ? '✓ Copied' : '⎘ Copy'}
                     </Text>
-                  </HStack>
-                  <Text fontSize="xs" color={copiedReferral ? 'green.400' : 'whiteAlpha.400'} fontWeight="semibold">
-                    {copiedReferral ? '✓ Copied' : '⎘ Copy'}
+                  </Flex>
+                </Tooltip>
+
+                {!user?.referredBy ? (
+                  <Box mt={2} px={3} py={2.5} bg="whiteAlpha.50" rounded="xl" border="1px solid" borderColor="whiteAlpha.100">
+                    <Text color="gray.400" fontSize="xs" mb={1.5}>
+                      Have an invite code? Earn +15 COINS:
+                    </Text>
+                    <HStack gap={2}>
+                      <Input
+                        size="sm"
+                        placeholder="ENTER CODE"
+                        value={dashboardRefInput}
+                        onChange={(e) => setDashboardRefInput(e.target.value.toUpperCase())}
+                        bg="blackAlpha.600"
+                        borderColor="whiteAlpha.300"
+                        color="white"
+                        rounded="lg"
+                        fontFamily="monospace"
+                        fontSize="xs"
+                        _placeholder={{ color: 'whiteAlpha.400' }}
+                      />
+                      <Button
+                        size="sm"
+                        bg="white"
+                        color="black"
+                        fontWeight="bold"
+                        fontSize="xs"
+                        px={4}
+                        rounded="lg"
+                        isLoading={isClaimingRef}
+                        onClick={handleDashboardClaimReferral}
+                        _hover={{ bg: 'gray.200' }}
+                      >
+                        CLAIM
+                      </Button>
+                    </HStack>
+                  </Box>
+                ) : (
+                  <Text mt={1.5} px={1} fontSize="xs" color="green.400" fontWeight="semibold">
+                    ✓ Referred by {user.referredBy}
                   </Text>
-                </Flex>
-              </Tooltip>
+                )}
+              </Box>
             </Flex>
 
             {/* --- Play CTA --- */}

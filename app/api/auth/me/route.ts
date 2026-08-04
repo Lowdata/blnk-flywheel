@@ -10,7 +10,7 @@ export async function GET() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
 
   if (!session.siwe) {
-    return NextResponse.json({ ok: false, message: 'Not logged in' }, { status: 401 });
+    return NextResponse.json({ ok: false, message: 'Not logged in', user: null }, { status: 200 });
   }
 
   await dbConnect();
@@ -19,7 +19,7 @@ export async function GET() {
   if (!user) {
     // If user has a cookie but isn't in DB (e.g. from a past error), force logout
     session.destroy();
-    return NextResponse.json({ ok: false, message: 'User not found in DB' }, { status: 401 });
+    return NextResponse.json({ ok: false, message: 'User not found in DB', user: null }, { status: 200 });
   }
 
   return NextResponse.json({

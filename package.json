@@ -23,6 +23,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "@x402/core": "^2.20.0",
+    "@x402/evm": "^2.20.0",
     "@x402/svm": "^2.20.0",
     "ethers": "^6.17.0",
     "framer-motion": "^12.42.2",
@@ -46,5 +47,8 @@
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "qr": "0.5.1"
   }
 }

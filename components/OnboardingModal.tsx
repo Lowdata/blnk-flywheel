@@ -33,7 +33,6 @@ const WALLET_BADGES = [
   { name: 'MetaMask', color: '#e2761b' },
   { name: 'Phantom', color: '#ab9ff2' },
   { name: 'Rainbow', color: '#ff6b9d' },
-  { name: 'Coinbase', color: '#0052ff' },
   { name: 'Trust', color: '#3375bb' },
 ];
 

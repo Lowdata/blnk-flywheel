@@ -1,15 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box, Button, Flex, Heading, Text, VStack, HStack,
-  useToast, Input, Modal, ModalOverlay, ModalContent,
-  ModalBody, ModalCloseButton, Skeleton, IconButton,
+  useToast, Modal, ModalOverlay, ModalContent,
+  ModalBody, ModalCloseButton, Skeleton,
   Tooltip,
 } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
-import SpotlightCard from '@/components/SpotlightCard';
-import SoundButton from '@/components/SoundButton';
 import OnboardingModal from '@/components/OnboardingModal';
 import { soundManager } from '@/lib/sound';
 
@@ -22,13 +20,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState<any[]>([]);
   const [verifyingTasks, setVerifyingTasks] = useState<{ [taskId: string]: number }>({});
-  const [inviteCodeInput, setInviteCodeInput] = useState('');
-  const [claimingInvite, setClaimingInvite] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeModal, setActiveModal] = useState<'about' | null>(null);
   const [siweLoading, setSiweLoading] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedReferral, setCopiedReferral] = useState(false);
+  // Tracks whether the user explicitly logged out to prevent SIWE re-triggering
+  const didLogout = useRef(false);
+  const onboardingDismissed = useRef(false);
 
   const toast = useToast();
   const router = useRouter();
@@ -39,14 +38,22 @@ export default function Dashboard() {
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
 
-  // --- Show onboarding after load -------------------------------
+  // --- Show onboarding only when connected but incomplete (not after logout) ---
   useEffect(() => {
-    if (!loading) {
-      if (!user || !user.twitterLinked) {
+    if (!loading && isConnected && !didLogout.current && !onboardingDismissed.current) {
+      if (!user || !user.twitterLinked || !user.referredBy) {
         setShowOnboarding(true);
+      } else {
+        setShowOnboarding(false);
       }
     }
-  }, [loading, user]);
+    if (!isConnected || didLogout.current) {
+      setShowOnboarding(false);
+      if (!isConnected) {
+        onboardingDismissed.current = false;
+      }
+    }
+  }, [loading, user, isConnected]);
 
   // --- SIWE sign-in when wallet connects ------------------------
   const performSiweSignIn = useCallback(async (connectedAddress: string) => {
@@ -89,6 +96,7 @@ export default function Dashboard() {
       toast({ title: 'Successfully signed in', status: 'success', duration: 3000 });
       soundManager.playWin();
       await fetchUser();
+      await fetchTasks();
     } catch (e: any) {
       // User rejected signature — disconnect cleanly
       if (e?.message?.includes('User rejected') || e?.code === 4001) {
@@ -104,6 +112,8 @@ export default function Dashboard() {
 
   // --- Trigger SIWE when wallet connects but no session user ----
   useEffect(() => {
+    // Don't re-trigger SIWE if the user just explicitly logged out
+    if (didLogout.current) return;
     if (isConnected && address && !user && !loading && !siweLoading) {
       performSiweSignIn(address);
     }
@@ -139,11 +149,12 @@ export default function Dashboard() {
   useEffect(() => {
     fetchUser();
     fetchTasks();
-  }, []);
+  }, [user?._id]);
 
   // --- Connect wallet (opens RainbowKit modal) ------------------
   const connectWallet = () => {
     soundManager.playClick();
+    didLogout.current = false; // allow SIWE triggers when reconnecting
     openConnectModal?.();
   };
 
@@ -151,12 +162,15 @@ export default function Dashboard() {
   const handleLogout = async () => {
     soundManager.playClick();
     try {
+      didLogout.current = true; // prevent SIWE re-trigger and Onboarding modal open
+      setShowOnboarding(false);
       await fetch('/api/auth/logout', { method: 'POST' });
       disconnect(); // Disconnect from wagmi/wallet
       setUser(null);
       setTasks([]);
       toast({ title: 'Disconnected', status: 'info', duration: 2000 });
     } catch (e) {
+      didLogout.current = false; // allow retry
       toast({ title: 'Logout failed', status: 'error' });
     }
   };
@@ -243,65 +257,6 @@ export default function Dashboard() {
     }, 1000);
   };
 
-  // --- Twitter link ---------------------------------------------
-  const handleLinkTwitterModal = async (username: string): Promise<boolean> => {
-    soundManager.playClick();
-    try {
-      const res = await fetch('/api/tasks/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskId: 'twitter_connect', data: { username } }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        soundManager.playWin();
-        toast({ title: 'Twitter Linked! +10 Coins', status: 'success', duration: 3000 });
-        await fetchUser();
-        return true;
-      }
-      return false;
-    } catch (err) {
-      toast({ title: 'Failed to link Twitter', status: 'error' });
-      return false;
-    }
-  };
-
-  // --- Referral claim -------------------------------------------
-  const handleClaimCardInvite = async () => {
-    if (!inviteCodeInput.trim()) return;
-    setClaimingInvite(true);
-    soundManager.playClick();
-    try {
-      const res = await fetch('/api/referral/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ referralCode: inviteCodeInput.trim() }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        soundManager.playWin();
-        toast({
-          title: 'Referral Applied!',
-          description: data.message || 'You earned +15 COINS welcome bonus.',
-          status: 'success',
-          duration: 4000,
-        });
-        setInviteCodeInput('');
-        await fetchUser();
-      } else {
-        toast({
-          title: 'Cannot Apply Code',
-          description: data.message || 'Invalid code or already applied.',
-          status: 'error',
-          duration: 3000,
-        });
-      }
-    } catch (e) {
-      toast({ title: 'Failed to claim referral code', status: 'error' });
-    } finally {
-      setClaimingInvite(false);
-    }
-  };
 
   // --- Loading skeleton -----------------------------------------
   if (loading) {
@@ -360,26 +315,21 @@ export default function Dashboard() {
           fontSize="xl"
           letterSpacing="0.25em"
           textTransform="uppercase"
-          bgGradient="linear(to-r, cyan.400, purple.500)"
+          bgGradient="linear(to-r, white, whiteAlpha.600)"
           bgClip="text"
         >
           BLNK
         </Text>
 
-        {/* Center: Leaderboard (disabled) - hidden on mobile */}
+        {/* Center: Leaderboard - visible with Soon badge */}
         <Tooltip label="Leaderboard coming soon" placement="bottom">
-          <Button
-            size="sm"
-            variant="ghost"
-            color="whiteAlpha.300"
-            cursor="not-allowed"
-            leftIcon={<Text fontSize={{ base: 'md', md: 'sm' }}>🏆</Text>}
-            _hover={{ bg: 'transparent' }}
-            pointerEvents="all"
-            display={{ base: 'none', md: 'flex' }}
-          >
-            Leaderboard
-          </Button>
+          <Flex align="center" gap={1.5} px={3} py={1.5} rounded="full" bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" cursor="default">
+            <Text fontSize="sm">🏆</Text>
+            <Text fontSize="xs" fontWeight="medium" color="whiteAlpha.800" display={{ base: 'none', sm: 'block' }}>Leaderboard</Text>
+            <Box px={1.5} py={0.5} rounded="full" bg="whiteAlpha.300" color="white" fontSize="3xs" fontWeight="bold">
+              SOON
+            </Box>
+          </Flex>
         </Tooltip>
 
         {/* Right: connection + wallet + coins + disconnect */}
@@ -392,8 +342,8 @@ export default function Dashboard() {
 
           {displayAddress ? (
             <>
-              {/* Connection status dot */}
-              <Flex align="center" gap={1.5}>
+              {/* Connection status dot - desktop only to prevent overflow on mobile */}
+              <Flex align="center" gap={1.5} display={{ base: 'none', md: 'flex' }}>
                 <Box
                   w={2}
                   h={2}
@@ -401,7 +351,7 @@ export default function Dashboard() {
                   bg="green.400"
                   boxShadow="0 0 6px 2px rgba(72,187,120,0.6)"
                 />
-                <Text fontSize="xs" color="green.400" fontWeight="semibold" display={{ base: 'none', md: 'block' }}>
+                <Text fontSize="xs" color="green.400" fontWeight="semibold">
                   Connected
                 </Text>
               </Flex>
@@ -442,7 +392,7 @@ export default function Dashboard() {
                 border="1px solid"
                 borderColor="whiteAlpha.200"
               >
-                <Text fontSize="xs" color="pink.400" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
+                <Text fontSize="xs" color="whiteAlpha.700" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
                   Coins
                 </Text>
                 <Text fontWeight="black" fontSize="sm" color="white">{user?.coins ?? 0}</Text>
@@ -493,7 +443,8 @@ export default function Dashboard() {
         zIndex={10}
         minH="calc(100vh - 56px)"
         w="full"
-        justify="center"
+        justify={{ base: 'flex-start', md: 'center' }}
+        pt={{ base: 6, md: 0 }}
       >
         {/* --- Connect / Dashboard --- */}
         {!displayAddress ? (
@@ -554,7 +505,7 @@ export default function Dashboard() {
                 </Button>
                 <Flex gap={3} align="center" flexWrap="wrap" justify="center">
                   <Text fontSize="xs" color="whiteAlpha.400">Supports</Text>
-                  {['MetaMask', 'Phantom', 'WalletConnect', 'Rainbow', 'Trust'].map((w) => (
+                  {['MetaMask', 'Phantom', 'Rainbow', 'Trust'].map((w) => (
                     <Text key={w} fontSize="xs" color="whiteAlpha.600" fontWeight="semibold">
                       {w}
                     </Text>
@@ -566,14 +517,14 @@ export default function Dashboard() {
         ) : (
           <VStack gap={{ base: 3, md: 4 }} w="full" align="stretch" maxW="3xl" className="animate-float-in">
 
-            {/* --- Hero (compact) - hidden on mobile since it's in the navbar --- */}
-            <VStack gap={0} textAlign="center" pb={1} display={{ base: 'none', md: 'flex' }}>
+            {/* --- Hero (compact) - visible on mobile and desktop for balanced layout --- */}
+            <VStack gap={0} textAlign="center" pb={1}>
               <Heading
-                size={{ base: '3xl', md: '4xl' }}
+                size={{ base: '2xl', md: '4xl' }}
                 letterSpacing="0.2em"
                 fontWeight="black"
                 textTransform="uppercase"
-                bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
+                bgGradient="linear(to-r, white, whiteAlpha.600)"
                 bgClip="text"
               >
                 BLNK
@@ -603,7 +554,7 @@ export default function Dashboard() {
                   content: '""',
                   position: 'absolute',
                   top: 0, left: 0, right: 0, h: '3px',
-                  bgGradient: 'linear(to-r, cyan.400, blue.500)',
+                  bgGradient: 'linear(to-r, whiteAlpha.500, whiteAlpha.200)',
                 }}
               >
                 <HStack justify="space-between" align="center" mb={3}>
@@ -655,12 +606,11 @@ export default function Dashboard() {
                 rounded="2xl"
                 position="relative"
                 overflow="hidden"
-                alignSelf="flex-start"
                 _before={{
                   content: '""',
                   position: 'absolute',
                   top: 0, left: 0, right: 0, h: '4px',
-                  bgGradient: 'linear(to-r, pink.400, purple.500)',
+                  bgGradient: 'linear(to-r, whiteAlpha.600, whiteAlpha.200)',
                 }}
               >
                 <VStack align="start" gap={3}>
@@ -672,7 +622,7 @@ export default function Dashboard() {
                     <Text color="gray.500" fontSize="xs" mb={1} textTransform="uppercase" letterSpacing="widest">Your Invite Code</Text>
                     <Tooltip label={copiedReferral ? 'Copied!' : 'Click to copy'} placement="top">
                       <HStack cursor="pointer" onClick={handleCopyReferral} transition="all 0.2s" justify="space-between">
-                        <Text fontWeight="black" fontSize="xl" color="pink.400" letterSpacing="widest" fontFamily="monospace">
+                        <Text fontWeight="black" fontSize="xl" color="white" letterSpacing="widest" fontFamily="monospace">
                           {user?.referralCode || '------'}
                         </Text>
                         <Text fontSize="sm" color={copiedReferral ? 'green.400' : 'whiteAlpha.400'}>
@@ -704,14 +654,14 @@ export default function Dashboard() {
                     content: '""',
                     position: 'absolute',
                     top: 0, left: 0, right: 0, h: '2px',
-                    bgGradient: 'linear(to-r, pink.400, purple.500)',
+                    bgGradient: 'linear(to-r, whiteAlpha.600, whiteAlpha.200)',
                   }}
                   _hover={{ bg: 'whiteAlpha.200' }}
                   transition="all 0.2s"
                 >
                   <HStack gap={2}>
-                    <Text fontSize="xs" color="pink.400" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">Referral</Text>
-                    <Text fontWeight="black" fontSize="md" color="pink.300" letterSpacing="widest" fontFamily="monospace">
+                    <Text fontSize="xs" color="whiteAlpha.700" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">Referral</Text>
+                    <Text fontWeight="black" fontSize="md" color="white" letterSpacing="widest" fontFamily="monospace">
                       {user?.referralCode || '------'}
                     </Text>
                   </HStack>
@@ -815,15 +765,18 @@ export default function Dashboard() {
       {/* --- Onboarding Modal --- */}
       <OnboardingModal
         isOpen={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
+        onClose={() => {
+          setShowOnboarding(false);
+          onboardingDismissed.current = true;
+        }}
         user={user}
         onConnectWallet={connectWallet}
         onLinkTwitter={async (username) => {
           try {
-            const res = await fetch('/api/auth/twitter', {
+            const res = await fetch('/api/tasks/twitter', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username }),
+              body: JSON.stringify({ handle: username }),
             });
             if (res.ok) {
               await fetchUser();
@@ -838,7 +791,10 @@ export default function Dashboard() {
             return false;
           }
         }}
-        onRefreshUser={fetchUser}
+        onRefreshUser={async () => {
+          await fetchUser();
+          await fetchTasks();
+        }}
       />
     </Box>
   );

@@ -4,14 +4,19 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:webpack": "next dev --webpack",
+    "dev:lowmem": "NODE_OPTIONS='--max-old-space-size=4096' next dev",
     "build": "next build",
     "start": "next start",
+    "serve": "next build && next start",
+    "prod": "next build && next start",
+    "clean": "rm -rf .next",
     "lint": "eslint"
   },
   "dependencies": {
-    "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/next-js": "^2.4.2",
     "@chakra-ui/react": "^2.10.10",
+    "@coinbase/cdp-sdk": "^1.54.0",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -25,7 +30,6 @@
     "@x402/core": "^2.20.0",
     "@x402/evm": "^2.20.0",
     "@x402/svm": "^2.20.0",
-    "ethers": "^6.17.0",
     "framer-motion": "^12.42.2",
     "iron-session": "^8.0.4",
     "mongoose": "^8.24.2",

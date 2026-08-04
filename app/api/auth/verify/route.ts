@@ -1,7 +1,7 @@
 import { sessionOptions, SessionData } from '@/lib/session';
 import { getIronSession } from 'iron-session';
 import { SiweMessage } from 'siwe';
-import { isAddress } from 'ethers';
+import { isAddress } from 'viem';
 import { cookies } from 'next/headers';
 import dbConnect from '@/lib/mongodb';
 import { User } from '@/models/User';

@@ -15,6 +15,10 @@ const ContentSecurityPolicy = `
 `.replace(/\s{2,}/g, ' ').trim();
 
 const nextConfig: NextConfig = {
+    turbopack: {
+        // Silence the "multiple lockfiles" workspace-root inference warning
+        root: __dirname,
+    },
     async headers() {
         return [
             {

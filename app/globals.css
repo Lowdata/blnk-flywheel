@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #060d08;
-  --foreground: #dcfce7;
+  --background: #0a0a0c;
+  --foreground: #e5e7eb;
 }
 
 html {
@@ -18,8 +18,7 @@ html {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-retro), monospace;
-  image-rendering: pixelated;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
   width: 100%;
@@ -30,45 +29,6 @@ body {
   -webkit-overflow-scrolling: touch !important;
   touch-action: pan-y !important;
   overscroll-behavior-y: auto !important;
-}
-
-/* Old CRT Phosphor Green Retro Pixel Box Style */
-.pixel-box {
-  background-color: #0b1810;
-  border: 4px solid #166534;
-  box-shadow: 
-    0 4px 0 #050a06,
-    inset 0 2px 0 rgba(74, 222, 128, 0.15),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.6);
-}
-
-.pixel-card {
-  background-color: #0f2416;
-  border: 2px solid #15803d;
-  box-shadow: 
-    0 2px 0 #050a06,
-    inset 0 1px 0 rgba(74, 222, 128, 0.2);
-}
-
-.pixel-button {
-  font-family: var(--font-pixel), monospace;
-  background-color: #15803d;
-  color: #ffffff;
-  border: 3px solid #14532d;
-  box-shadow: 0 4px 0 #052e16, 0 6px 14px rgba(0,0,0,0.8);
-  transition: all 0.1s ease;
-  text-shadow: 0 2px 0 #052e16;
-}
-
-.pixel-button:hover {
-  background-color: #16a34a;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 0 #052e16, 0 8px 18px rgba(0,0,0,0.9);
-}
-
-.pixel-button:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #052e16;
 }
 
 .font-pixel {

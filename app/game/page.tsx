@@ -370,6 +370,15 @@ export default function GamePage() {
                 {/* -- 3D Canvas ------------------------------------------- */}
                 <Canvas
                     shadows
+                    dpr={[1, 1.5]}
+                    performance={{ min: 0.5 }}
+                    gl={{
+                        powerPreference: 'high-performance',
+                        antialias: true,
+                        alpha: false,
+                        stencil: false,
+                        depth: true,
+                    }}
                     camera={{ position: [0, 2.1, 2.2], fov: 55 }}
                     style={{
                         width: '100%',

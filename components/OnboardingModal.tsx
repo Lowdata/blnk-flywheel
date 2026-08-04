@@ -16,8 +16,6 @@ import {
   Icon,
   useToast,
 } from '@chakra-ui/react';
-import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -30,10 +28,10 @@ interface OnboardingModalProps {
 
 // Wallet brand badges shown in step 1
 const WALLET_BADGES = [
-  { name: 'MetaMask', color: '#e2761b' },
-  { name: 'Phantom', color: '#ab9ff2' },
-  { name: 'Rainbow', color: '#ff6b9d' },
-  { name: 'Trust', color: '#3375bb' },
+  { name: 'MetaMask' },
+  { name: 'Phantom' },
+  { name: 'Rainbow' },
+  { name: 'Trust' },
 ];
 
 export default function OnboardingModal({
@@ -47,43 +45,36 @@ export default function OnboardingModal({
   const [referralInput, setReferralInput] = useState('');
   const [twitterUsername, setTwitterUsername] = useState('');
   const [isClaiming, setIsClaiming] = useState(false);
-  const [activeStep, setActiveStep] = useState<number>(!user ? 1 : !user.twitterLinked ? 2 : 3);
+  // Always start at 1; the effect below drives step from user state.
+  const [activeStep, setActiveStep] = useState<number>(1);
   const toast = useToast();
 
-  // RainbowKit modal hook — opens the multi-wallet picker
-  const { openConnectModal } = useConnectModal();
-  const { isConnected } = useAccount();
-
+  // Drive activeStep from user state whenever the modal opens or user changes.
   useEffect(() => {
-    if (isOpen) {
-      if (!user) {
-        setActiveStep(1);
-      } else if (!user.twitterLinked) {
-        setActiveStep(2);
-      } else {
-        if (activeStep === 1) {
-          // Returning user who already linked Twitter just connected wallet
-          onClose();
-        } else if (activeStep === 2) {
-          // User just linked Twitter, proceed to referral step
-          setActiveStep(3);
+    if (!isOpen) return;
+    if (!user) {
+      setActiveStep(1);
+    } else if (!user.twitterLinked) {
+      // Only advance 1→2; if already on step 3, don't regress
+      setActiveStep((prev) => (prev < 2 ? 2 : prev));
+    } else {
+      // user fully onboarded — close if we just completed step 1 or 2
+      setActiveStep((prev) => {
+        if (prev === 1 || prev === 2) {
+          // Advance to referral step
+          return 3;
         }
-      }
+        return prev;
+      });
     }
   }, [isOpen, user]);
 
-  // When wallet connects (wagmi reports isConnected), advance from step 1
+  // When a fully-onboarded user re-opens the modal, close it immediately.
   useEffect(() => {
-    if (isConnected && activeStep === 1 && isOpen && !user) {
-      // SIWE signing is handled in page.tsx; onboarding stays open until user is populated
-      // Nothing to do here — user state update in parent will re-trigger this modal's useEffect above
+    if (isOpen && user?.twitterLinked && activeStep === 3 && user?.referredBy) {
+      onClose();
     }
-  }, [isConnected, activeStep, isOpen, user]);
-
-  const handleConnectClick = () => {
-    // Use RainbowKit's modal — supports MetaMask, Phantom, Coinbase, WalletConnect etc.
-    openConnectModal?.();
-  };
+  }, [isOpen, user, activeStep, onClose]);
 
   const handleClaimReferral = async () => {
     if (!referralInput.trim()) {
@@ -129,46 +120,47 @@ export default function OnboardingModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg" closeOnOverlayClick={false} closeOnEsc={false}>
-      <ModalOverlay bg="rgba(0, 0, 0, 0.88)" backdropFilter="blur(8px)" />
+      <ModalOverlay bg="rgba(0, 0, 0, 0.88)" backdropFilter="blur(10px)" />
       <ModalContent
-        bg="#0e0514"
-        border="2px solid #d946ef"
-        boxShadow="0 0 35px rgba(236, 72, 153, 0.35), inset 0 0 15px rgba(236, 72, 153, 0.15)"
+        bg="#0a0a0c"
+        border="1px solid"
+        borderColor="whiteAlpha.200"
+        boxShadow="0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(255, 255, 255, 0.04)"
         borderRadius="3xl"
         p={6}
         color="white"
         position="relative"
         overflow="hidden"
       >
-        {/* Cyberpunk accent lines */}
+        {/* Monochrome top accent line */}
         <Box
           position="absolute"
-          top="-2px"
+          top="-1px"
           left="20%"
           right="20%"
-          height="3px"
-          bg="#f472b6"
-          boxShadow="0 0 12px #f472b6"
+          height="2px"
+          bg="whiteAlpha.400"
+          boxShadow="0 0 12px rgba(255, 255, 255, 0.3)"
         />
 
         <ModalBody p={0}>
           <VStack align="stretch" gap={6}>
             <VStack align="center" gap={1}>
               <Text
-                fontWeight="medium"
-                fontSize="xs"
-                color="pink.400"
+                fontWeight="semibold"
+                fontSize="2xs"
+                color="whiteAlpha.500"
                 letterSpacing="2px"
                 textAlign="center"
               >
                 SYSTEM ACCESS REQUIRED
               </Text>
               <Text
-                fontWeight="bold"
-                fontSize="3xl"
+                fontWeight="black"
+                fontSize="2xl"
                 color="white"
                 textAlign="center"
-                textShadow="0 0 10px rgba(244, 114, 182, 0.4)"
+                letterSpacing="tight"
               >
                 ONBOARDING PROTOCOL
               </Text>
@@ -179,45 +171,48 @@ export default function OnboardingModal({
               <Box
                 flex={1}
                 p={2}
-                bg={user ? '#0e0514' : '#1c082a'}
+                bg={user ? '#0e0e11' : '#141418'}
                 border="1px solid"
-                borderColor={user ? '#d946ef' : '#a855f7'}
+                borderColor={user ? 'whiteAlpha.400' : 'whiteAlpha.200'}
+                borderRadius="lg"
                 textAlign="center"
               >
-                <Text fontWeight="medium" fontSize="3xs" color={user ? 'green.400' : 'yellow.400'}>
+                <Text fontWeight="medium" fontSize="3xs" color={user ? 'green.400' : 'whiteAlpha.800'}>
                   1. WALLET {user ? '✓' : 'REQUIRED'}
                 </Text>
               </Box>
-              <Box w="10px" h="2px" bg="#d946ef" mx={1} />
+              <Box w="10px" h="1px" bg="whiteAlpha.200" mx={1} />
               <Box
                 flex={1}
                 p={2}
-                bg={user?.twitterLinked ? '#0e0514' : '#08030d'}
+                bg={user?.twitterLinked ? '#0e0e11' : '#0a0a0c'}
                 border="1px solid"
-                borderColor={user?.twitterLinked ? '#d946ef' : '#334155'}
+                borderColor={user?.twitterLinked ? 'whiteAlpha.400' : 'whiteAlpha.100'}
+                borderRadius="lg"
                 textAlign="center"
               >
                 <Text
                   fontWeight="medium"
                   fontSize="3xs"
-                  color={user?.twitterLinked ? 'green.400' : 'gray.400'}
+                  color={user?.twitterLinked ? 'green.400' : 'whiteAlpha.400'}
                 >
                   2. TWITTER {user?.twitterLinked ? '✓' : ''}
                 </Text>
               </Box>
-              <Box w="10px" h="2px" bg="#d946ef" mx={1} />
+              <Box w="10px" h="1px" bg="whiteAlpha.200" mx={1} />
               <Box
                 flex={1}
                 p={2}
-                bg={user?.referredBy ? '#0e0514' : '#08030d'}
+                bg={user?.referredBy ? '#0e0e11' : '#0a0a0c'}
                 border="1px solid"
-                borderColor={user?.referredBy ? '#d946ef' : '#334155'}
+                borderColor={user?.referredBy ? 'whiteAlpha.400' : 'whiteAlpha.100'}
+                borderRadius="lg"
                 textAlign="center"
               >
                 <Text
                   fontWeight="medium"
                   fontSize="3xs"
-                  color={user?.referredBy ? 'green.400' : 'gray.400'}
+                  color={user?.referredBy ? 'green.400' : 'whiteAlpha.400'}
                 >
                   3. INVITE {user?.referredBy ? '✓' : ''}
                 </Text>
@@ -228,46 +223,47 @@ export default function OnboardingModal({
             {activeStep === 1 && (
               <VStack
                 p={5}
-                bg="#060308"
-                border="1px solid #701a75"
+                bg="#0e0e12"
+                border="1px solid"
+                borderColor="whiteAlpha.200"
+                borderRadius="2xl"
                 align="center"
                 gap={4}
                 textAlign="center"
               >
-                <Icon viewBox="0 0 24 24" boxSize={8} color="pink.400" fill="none" stroke="currentColor" strokeWidth={2}>
+                <Icon viewBox="0 0 24 24" boxSize={8} color="whiteAlpha.800" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </Icon>
                 <VStack gap={1}>
-                  <Text fontWeight="bold" fontSize="xl" color="white">
+                  <Text fontWeight="bold" fontSize="lg" color="white">
                     LINK CRYPTOGRAPHIC WALLET
                   </Text>
-                  <Text color="gray.400" fontSize="xs">
+                  <Text color="whiteAlpha.600" fontSize="xs">
                     Choose your wallet to connect via SIWE and establish your identity.
                   </Text>
                 </VStack>
 
-                {/* Wallet brand badges */}
+                {/* Monochrome wallet brand badges */}
                 <HStack gap={2} wrap="wrap" justify="center">
                   {WALLET_BADGES.map((w) => (
                     <Flex
                       key={w.name}
                       align="center"
                       gap={1.5}
-                      px={2}
+                      px={2.5}
                       py={1}
-                      bg="whiteAlpha.100"
+                      bg="whiteAlpha.50"
                       border="1px solid"
                       borderColor="whiteAlpha.200"
                       borderRadius="md"
                     >
                       <Box
-                        w="8px"
-                        h="8px"
+                        w="6px"
+                        h="6px"
                         borderRadius="full"
-                        bg={w.color}
-                        boxShadow={`0 0 6px ${w.color}`}
+                        bg="whiteAlpha.600"
                       />
-                      <Text fontSize="2xs" color="whiteAlpha.700" fontWeight="medium">
+                      <Text fontSize="2xs" color="whiteAlpha.800" fontWeight="medium">
                         {w.name}
                       </Text>
                     </Flex>
@@ -276,13 +272,14 @@ export default function OnboardingModal({
 
                 <Button
                   w="full"
-                  bg="#d946ef"
+                  bg="white"
                   color="black"
-                  fontWeight="medium"
-                  fontSize="2xs"
+                  fontWeight="bold"
+                  fontSize="xs"
                   py={6}
-                  _hover={{ bg: '#f472b6', boxShadow: '0 0 15px rgba(244, 114, 182, 0.4)' }}
-                  onClick={handleConnectClick}
+                  rounded="xl"
+                  _hover={{ bg: 'gray.200', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
+                  onClick={onConnectWallet}
                 >
                   CHOOSE WALLET & CONNECT
                 </Button>
@@ -293,20 +290,22 @@ export default function OnboardingModal({
             {activeStep === 2 && (
               <VStack
                 p={5}
-                bg="#060308"
-                border="1px solid #701a75"
+                bg="#0e0e12"
+                border="1px solid"
+                borderColor="whiteAlpha.200"
+                borderRadius="2xl"
                 align="stretch"
                 gap={4}
               >
                 <VStack gap={1} align="center" textAlign="center">
-                  <Icon viewBox="0 0 24 24" boxSize={8} color="#1da1f2" fill="currentColor">
-                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
+                  <Icon viewBox="0 0 24 24" boxSize={8} color="whiteAlpha.900" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                   </Icon>
-                  <Text fontWeight="bold" fontSize="xl" color="white">
-                    LINK TWITTER
+                  <Text fontWeight="bold" fontSize="lg" color="white">
+                    LINK X (TWITTER)
                   </Text>
-                  <Text color="gray.400" fontSize="xs">
-                    Connect your X (Twitter) account to enable social tasks and claim +10 COINS.
+                  <Text color="whiteAlpha.600" fontSize="xs">
+                    Connect your X account to enable social tasks and claim +10 COINS.
                   </Text>
                 </VStack>
 
@@ -315,21 +314,25 @@ export default function OnboardingModal({
                     placeholder="ENTER @USERNAME"
                     value={twitterUsername}
                     onChange={(e) => setTwitterUsername(e.target.value)}
-                    bg="#0e0514"
-                    border="1px solid #1da1f2"
+                    bg="#0a0a0c"
+                    border="1px solid"
+                    borderColor="whiteAlpha.300"
                     color="white"
                     textAlign="center"
-                    fontSize="md"
-                    _placeholder={{ color: 'gray.600', fontSize: 'xs' }}
+                    fontSize="sm"
+                    rounded="xl"
+                    _placeholder={{ color: 'whiteAlpha.400', fontSize: 'xs' }}
+                    _focus={{ borderColor: 'whiteAlpha.600', boxShadow: 'none' }}
                   />
                   <Button
                     w="full"
-                    bg="#1da1f2"
-                    color="white"
-                    fontWeight="medium"
-                    fontSize="2xs"
+                    bg="white"
+                    color="black"
+                    fontWeight="bold"
+                    fontSize="xs"
                     py={6}
-                    _hover={{ bg: '#40a9f3', boxShadow: '0 0 15px rgba(29, 161, 242, 0.6)' }}
+                    rounded="xl"
+                    _hover={{ bg: 'gray.200', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
                     onClick={async () => {
                       if (!twitterUsername.trim()) {
                         toast({ title: 'Please enter your Twitter username', status: 'warning' });
@@ -341,7 +344,7 @@ export default function OnboardingModal({
                       }
                     }}
                   >
-                    LINK TWITTER (+10 COINS)
+                    LINK X (+10 COINS)
                   </Button>
                 </VStack>
               </VStack>
@@ -351,45 +354,51 @@ export default function OnboardingModal({
             {activeStep === 3 && (
               <VStack
                 p={5}
-                bg="#060308"
-                border="1px solid #701a75"
+                bg="#0e0e12"
+                border="1px solid"
+                borderColor="whiteAlpha.200"
+                borderRadius="2xl"
                 align="stretch"
                 gap={4}
               >
                 <VStack gap={1} align="center" textAlign="center">
-                  <Icon viewBox="0 0 24 24" boxSize={8} color="purple.400" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <Icon viewBox="0 0 24 24" boxSize={8} color="whiteAlpha.800" fill="none" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
                   </Icon>
-                  <Text fontWeight="bold" fontSize="xl" color="white">
+                  <Text fontWeight="bold" fontSize="lg" color="white">
                     INVITATION REFERRAL
                   </Text>
-                  <Text color="gray.400" fontSize="xs">
+                  <Text color="whiteAlpha.600" fontSize="xs">
                     Enter an invitation referral code to claim +15 COINS welcome bonus.
                   </Text>
                 </VStack>
 
-                {!user.referredBy ? (
+                {!user?.referredBy ? (
                   <VStack gap={3}>
                     <Input
                       placeholder="ENTER CODE (e.g. BLNK-E4F1B3)"
                       value={referralInput}
                       onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
-                      bg="#0e0514"
-                      border="1px solid #d946ef"
-                      color="pink.200"
+                      bg="#0a0a0c"
+                      border="1px solid"
+                      borderColor="whiteAlpha.300"
+                      color="white"
                       textAlign="center"
-                      fontSize="md"
-                      letterSpacing="3px"
-                      _placeholder={{ color: 'gray.600', letterSpacing: 'normal', fontSize: 'xs' }}
+                      fontSize="sm"
+                      rounded="xl"
+                      letterSpacing="2px"
+                      _placeholder={{ color: 'whiteAlpha.400', letterSpacing: 'normal', fontSize: 'xs' }}
+                      _focus={{ borderColor: 'whiteAlpha.600', boxShadow: 'none' }}
                     />
                     <Button
                       w="full"
-                      bg="#d946ef"
+                      bg="white"
                       color="black"
-                      fontWeight="medium"
-                      fontSize="2xs"
+                      fontWeight="bold"
+                      fontSize="xs"
                       py={6}
-                      _hover={{ bg: '#f472b6', boxShadow: '0 0 15px rgba(244, 114, 182, 0.4)' }}
+                      rounded="xl"
+                      _hover={{ bg: 'gray.200', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
                       onClick={handleClaimReferral}
                       isLoading={isClaiming}
                     >
@@ -398,17 +407,18 @@ export default function OnboardingModal({
                   </VStack>
                 ) : (
                   <VStack gap={3} align="center">
-                    <Text fontWeight="medium" fontSize="2xs" color="pink.400">
+                    <Text fontWeight="medium" fontSize="xs" color="green.400">
                       ✓ REFERRAL APPLIED ({user.referredBy})
                     </Text>
                     <Button
                       w="full"
-                      bg="#d946ef"
+                      bg="white"
                       color="black"
-                      fontWeight="medium"
-                      fontSize="2xs"
+                      fontWeight="bold"
+                      fontSize="xs"
                       py={6}
-                      _hover={{ bg: '#f472b6', boxShadow: '0 0 15px rgba(74, 222, 128, 0.6)' }}
+                      rounded="xl"
+                      _hover={{ bg: 'gray.200', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
                       onClick={onClose}
                     >
                       ENTER THE CLAW MACHINE →

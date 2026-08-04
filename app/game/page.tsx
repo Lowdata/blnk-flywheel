@@ -15,6 +15,7 @@ import SoundButton from '@/components/SoundButton';
 import * as THREE from 'three';
 import { useDisconnect } from 'wagmi';
 import SmileyStampBadge from '@/components/SmileyStampBadge';
+import PillBadge from '@/components/PillBadge';
 
 /* --- Game Phase State Machine ----------------------------------------------
    intro        → Big "PLAY GAME" button. Controls hidden.
@@ -273,7 +274,7 @@ export default function GamePage() {
                     if (!isWin) {
                         soundManager.playLoss();
                     } else {
-                        soundManager.playWin(outcome === 'GUARANTEED');
+                        soundManager.playWin(outcome === 'GTD' || outcome === 'GUARANTEED');
                         ref.current?.setWinColorMode?.(true);
                     }
                 }
@@ -650,7 +651,11 @@ export default function GamePage() {
                         }}>
                             {outcomeCard.isWin ? (
                                 <>
-                                    <SmileyStampBadge size={120} />
+                                    {outcomeCard.outcome === 'GTD' || outcomeCard.outcome === 'GUARANTEED' ? (
+                                        <SmileyStampBadge size={120} />
+                                    ) : (
+                                        <PillBadge size={120} />
+                                    )}
                                     <div style={{
                                         fontWeight: "medium", fontFamily: "var(--font-inter), sans-serif", fontSize: '10px', letterSpacing: '0.3em',
                                         color: '#4ade80', textTransform: 'uppercase', 

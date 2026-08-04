@@ -31,6 +31,8 @@ interface PresentationCapsule {
     sparkles: THREE.Points;
     sparkleMaterial: THREE.PointsMaterial;
     scaleRatio: number;
+    stampTexture: THREE.CanvasTexture | null;
+    pillTexture: THREE.CanvasTexture | null;
 }
 
 const stateMap: IStateMap = {};
@@ -158,6 +160,141 @@ function createSmileyStampTexture(): THREE.CanvasTexture | null {
     return texture;
 }
 
+function createPillTexture(): THREE.CanvasTexture | null {
+    if (typeof document === 'undefined') return null;
+    const size = 1024;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+        ctx.clearRect(0, 0, size, size);
+
+        ctx.save();
+        ctx.translate(512, 512);
+        ctx.rotate((-25 * Math.PI) / 180);
+
+        // 1. Outer White 3D Beveled Sticker Base
+        const outerBaseGrad = ctx.createLinearGradient(-420, -220, 420, 220);
+        outerBaseGrad.addColorStop(0, '#ffffff');
+        outerBaseGrad.addColorStop(0.4, '#fafcfd');
+        outerBaseGrad.addColorStop(0.85, '#edf2f9');
+        outerBaseGrad.addColorStop(1, '#dee6f2');
+        ctx.fillStyle = outerBaseGrad;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetY = 15;
+        ctx.beginPath();
+        ctx.roundRect(-420, -220, 840, 440, 220);
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+
+        // 2. Inner capsule clip path
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(-380, -180, 760, 360, 180);
+        ctx.clip();
+
+        // 3. Left Green Half with 3D Cylindrical Shading + Radial Glow
+        const greenGrad = ctx.createLinearGradient(0, -180, 0, 180);
+        greenGrad.addColorStop(0, '#68fab1');
+        greenGrad.addColorStop(0.15, '#1cd673');
+        greenGrad.addColorStop(0.45, '#05bd60');
+        greenGrad.addColorStop(0.8, '#017b3d');
+        greenGrad.addColorStop(1, '#00572b');
+        ctx.fillStyle = greenGrad;
+        ctx.fillRect(-380, -180, 380, 360);
+
+        // Green radial inner highlight
+        const greenGlow = ctx.createRadialGradient(-180, -60, 20, -180, -60, 280);
+        greenGlow.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+        greenGlow.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
+        greenGlow.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
+        ctx.fillStyle = greenGlow;
+        ctx.fillRect(-380, -180, 380, 360);
+
+        // 4. Right White Half with Ceramic Shading + Radial Sheen
+        const whiteGrad = ctx.createLinearGradient(0, -180, 0, 180);
+        whiteGrad.addColorStop(0, '#ffffff');
+        whiteGrad.addColorStop(0.25, '#f4f7fc');
+        whiteGrad.addColorStop(0.6, '#dce4f0');
+        whiteGrad.addColorStop(0.85, '#b6c5d8');
+        whiteGrad.addColorStop(1, '#96a8be');
+        ctx.fillStyle = whiteGrad;
+        ctx.fillRect(0, -180, 380, 360);
+
+        // White radial ceramic sheen
+        const whiteGlow = ctx.createRadialGradient(180, -60, 20, 180, -60, 280);
+        whiteGlow.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+        whiteGlow.addColorStop(0.55, 'rgba(255, 255, 255, 0)');
+        whiteGlow.addColorStop(1, 'rgba(100, 120, 150, 0.22)');
+        ctx.fillStyle = whiteGlow;
+        ctx.fillRect(0, -180, 380, 360);
+
+        // 5. Realistic 3D Recessed Center Seam / Groove
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(-2, -180); ctx.lineTo(-2, 180); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(4, -180); ctx.lineTo(4, 180); ctx.stroke();
+
+        // 6. Glossy Acrylic Top Reflection Arc
+        const shineGrad = ctx.createLinearGradient(0, -150, 0, 0);
+        shineGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        shineGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.25)');
+        shineGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = shineGrad;
+        ctx.beginPath();
+        ctx.moveTo(-320, -150);
+        ctx.lineTo(320, -150);
+        ctx.bezierCurveTo(345, -150, 365, -130, 365, -100);
+        ctx.lineTo(365, -70);
+        ctx.bezierCurveTo(365, -35, 345, -10, 320, -10);
+        ctx.lineTo(-320, -10);
+        ctx.bezierCurveTo(-345, -10, -365, -35, -365, -70);
+        ctx.lineTo(-365, -100);
+        ctx.bezierCurveTo(-365, -130, -345, -150, -320, -150);
+        ctx.closePath();
+        ctx.fill();
+
+        // 7. Crisp White Specular Highlighting Streak
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.beginPath();
+        ctx.roundRect(-300, -155, 600, 24, 12);
+        ctx.fill();
+
+        // 8. Ambient Bottom Occlusion Shading
+        const bottomGrad = ctx.createLinearGradient(0, 100, 0, 180);
+        bottomGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        bottomGrad.addColorStop(1, 'rgba(0, 0, 0, 0.38)');
+        ctx.fillStyle = bottomGrad;
+        ctx.fillRect(-380, 100, 760, 80);
+
+        ctx.restore();
+
+        // 9. Inner Beveled Rim for crisp 3D depth
+        const bevelGrad = ctx.createLinearGradient(-380, -180, 380, 180);
+        bevelGrad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+        bevelGrad.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
+        ctx.strokeStyle = bevelGrad;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.roundRect(-380, -180, 760, 360, 180);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.anisotropy = 16;
+    texture.needsUpdate = true;
+    return texture;
+}
+
 const Scene: ForwardRefRenderFunction<
     any,
     {
@@ -262,10 +399,11 @@ const Scene: ForwardRefRenderFunction<
         const rewardGroup = new THREE.Group();
         rewardGroup.position.y = -0.3 * scaleRatio;
         const stampTexture = createSmileyStampTexture();
+        const pillTexture = createPillTexture();
         const crystal = new THREE.Mesh(
             new THREE.PlaneGeometry(1.55, 1.55),
             new THREE.MeshStandardMaterial({
-                map: stampTexture || undefined,
+                map: stampTexture || null,
                 transparent: true,
                 alphaTest: 0.05,
                 roughness: 0.25,
@@ -316,6 +454,8 @@ const Scene: ForwardRefRenderFunction<
             sparkles,
             sparkleMaterial,
             scaleRatio,
+            stampTexture,
+            pillTexture,
         };
     }, [prizeCapsule.scene]);
 
@@ -684,6 +824,14 @@ const Scene: ForwardRefRenderFunction<
         presentationCapsule.rewardGroup.visible = outcome !== 'LOSS';
         presentationCapsule.rewardGroup.position.y = -0.3 * presentationCapsule.scaleRatio;
         presentationCapsule.crystal.scale.setScalar(0.2 * presentationCapsule.scaleRatio);
+        const isGtd = outcome === 'GTD' || outcome === 'GUARANTEED';
+        const mat = presentationCapsule.crystal.material as THREE.MeshStandardMaterial;
+        if (mat) {
+            mat.map = isGtd
+                ? (presentationCapsule.stampTexture || null)
+                : (presentationCapsule.pillTexture || null);
+            mat.needsUpdate = true;
+        }
         presentationCapsule.rewardLight.intensity = 0;
         presentationCapsule.sparkleMaterial.opacity = 0;
         revealTimerRef.current = 0;

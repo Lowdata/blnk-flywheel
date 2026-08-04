@@ -383,25 +383,38 @@ export default function Dashboard() {
           fontSize="xl"
           letterSpacing="0.25em"
           textTransform="uppercase"
-          bgGradient="linear(to-r, white, whiteAlpha.600)"
+          bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
           bgClip="text"
         >
           BLNK
         </Text>
 
-        {/* Center: Leaderboard - visible with Soon badge */}
-        <Tooltip label="Leaderboard coming soon" placement="bottom">
-          <Flex align="center" gap={1.5} px={3} py={1.5} rounded="full" bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" cursor="default">
-            <Text fontSize="sm">🏆</Text>
-            <Text fontSize="xs" fontWeight="medium" color="whiteAlpha.800" display={{ base: 'none', sm: 'block' }}>Leaderboard</Text>
-            <Box px={1.5} py={0.5} rounded="full" bg="whiteAlpha.300" color="white" fontSize="3xs" fontWeight="bold">
-              SOON
-            </Box>
-          </Flex>
-        </Tooltip>
+        {/* Right Navigation Menu */}
+        <Flex align="center" gap={{ base: 1.5, md: 3 }}>
+          {/* Leaderboard - Part of the Menu, fits responsive on small screens */}
+          <Tooltip label="Leaderboard coming soon" placement="bottom">
+            <Flex
+              align="center"
+              gap={1.5}
+              px={{ base: 2, md: 3 }}
+              py={1.5}
+              rounded="lg"
+              bg="whiteAlpha.100"
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+              cursor="default"
+              flexShrink={0}
+            >
+              <Text fontSize="xs">🏆</Text>
+              <Text fontSize="xs" fontWeight="medium" color="whiteAlpha.800" display={{ base: 'none', md: 'block' }}>
+                Leaderboard
+              </Text>
+              <Box px={1.5} py={0.5} rounded="full" bg="whiteAlpha.300" color="white" fontSize="3xs" fontWeight="bold">
+                SOON
+              </Box>
+            </Flex>
+          </Tooltip>
 
-        {/* Right: connection + wallet + coins + disconnect */}
-        <Flex align="center" gap={{ base: 2, md: 3 }}>
           {siweLoading && (
             <Text fontSize="xs" color="whiteAlpha.500" fontFamily="monospace" display={{ base: 'none', md: 'block' }}>
               Signing in…
@@ -592,7 +605,7 @@ export default function Dashboard() {
                 letterSpacing="0.2em"
                 fontWeight="black"
                 textTransform="uppercase"
-                bgGradient="linear(to-r, white, whiteAlpha.600)"
+                bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
                 bgClip="text"
               >
                 BLNK
@@ -605,186 +618,244 @@ export default function Dashboard() {
             {/* --- Tasks & Referrals Grid --- */}
             <Flex gap={{ base: 4, md: 6 }} direction={{ base: 'column', md: 'row' }} w="full">
 
-              {/* Tasks Card */}
+              {/* Tasks Card with BLNK Gradient Border Wrapper */}
               <Box
                 flex={1}
-                bgGradient="linear(to-br, whiteAlpha.200, whiteAlpha.50)"
-                backdropFilter="blur(20px)"
-                border="1px solid"
-                borderColor="whiteAlpha.200"
-                p={{ base: 3, md: 5 }}
+                p="1.5px"
                 rounded="2xl"
-                position="relative"
-                overflow="hidden"
+                bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
+                boxShadow="0 0 25px rgba(159, 122, 234, 0.22)"
                 display="flex"
                 flexDirection="column"
-                _before={{
-                  content: '""',
-                  position: 'absolute',
-                  top: 0, left: 0, right: 0, h: '3px',
-                  bgGradient: 'linear(to-r, whiteAlpha.500, whiteAlpha.200)',
-                }}
               >
-                <HStack justify="space-between" align="center" mb={3}>
-                  <Heading size="md">Tasks</Heading>
-                  <Text fontSize="xs" color="whiteAlpha.500">Complete to earn coins</Text>
-                </HStack>
+                <Box
+                  flex={1}
+                  bg="gray.900"
+                  p={{ base: 3, md: 5 }}
+                  rounded="2xl"
+                  position="relative"
+                  overflow="hidden"
+                  display="flex"
+                  flexDirection="column"
+                  _before={{
+                    content: '""',
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, h: '3px',
+                    bgGradient: 'linear(to-r, cyan.400, purple.500, pink.500)',
+                  }}
+                >
+                  <HStack justify="space-between" align="center" mb={3}>
+                    <Heading size="md">Tasks</Heading>
+                    <Text fontSize="xs" color="whiteAlpha.500">Complete to earn coins</Text>
+                  </HStack>
 
-                <VStack align="stretch" gap={2}>
-                  {tasks.map((task: any) => {
-                    const isCompleted = user?.completedTasks?.some(
-                      (ct: any) =>
-                        (ct._id || ct).toString() === (task._id || '').toString() || ct.taskId === task.taskId
-                    );
-                    const isVerifying = verifyingTasks[task.taskId];
-                    return (
-                      <Flex key={task.taskId} justify="space-between" align="center" p={2.5} bg="blackAlpha.400" borderRadius="lg">
-                        <Text fontSize="sm" color="whiteAlpha.900" fontWeight="medium">{task.description}</Text>
-                        <Button
-                          size="sm"
-                          bg={isCompleted ? 'whiteAlpha.200' : 'cyan.400'}
-                          color={isCompleted ? 'whiteAlpha.500' : 'black'}
-                          fontWeight="bold"
-                          rounded="md"
-                          h={7}
-                          fontSize="xs"
-                          flexShrink={0}
-                          ml={2}
-                          isLoading={!!isVerifying}
-                          isDisabled={isCompleted}
-                          onClick={() => handleTaskClick(task)}
-                          _hover={!isCompleted ? { bg: 'cyan.300' } : {}}
-                        >
-                          {isCompleted ? 'Done' : `+${task.rewardAmount}`}
-                        </Button>
-                      </Flex>
-                    );
-                  })}
-                </VStack>
+                  <VStack align="stretch" gap={2}>
+                    {tasks.map((task: any) => {
+                      const isCompleted = user?.completedTasks?.some(
+                        (ct: any) =>
+                          (ct._id || ct).toString() === (task._id || '').toString() || ct.taskId === task.taskId
+                      );
+                      const isVerifying = verifyingTasks[task.taskId];
+                      return (
+                        <Flex key={task.taskId} justify="space-between" align="center" p={2.5} bg="blackAlpha.400" borderRadius="lg">
+                          <Text fontSize="sm" color="whiteAlpha.900" fontWeight="medium">{task.description}</Text>
+                          <Button
+                            size="sm"
+                            bgGradient={!isCompleted ? 'linear(to-r, cyan.400, purple.500)' : undefined}
+                            bg={isCompleted ? 'whiteAlpha.200' : undefined}
+                            color={isCompleted ? 'whiteAlpha.500' : 'white'}
+                            fontWeight="bold"
+                            rounded="md"
+                            h={7}
+                            fontSize="xs"
+                            flexShrink={0}
+                            ml={2}
+                            isLoading={!!isVerifying}
+                            isDisabled={isCompleted}
+                            onClick={() => handleTaskClick(task)}
+                            _hover={!isCompleted ? { bgGradient: 'linear(to-r, cyan.300, purple.400)' } : {}}
+                          >
+                            {isCompleted ? 'Done' : `+${task.rewardAmount}`}
+                          </Button>
+                        </Flex>
+                      );
+                    })}
+                  </VStack>
+                </Box>
               </Box>
 
-              {/* Referrals Card - full card on desktop */}
+              {/* Referrals Card - full card on desktop with BLNK Gradient Border Wrapper */}
               <Box
-                display={{ base: 'none', md: 'block' }}
-                bgGradient="linear(to-br, whiteAlpha.200, whiteAlpha.50)"
-                backdropFilter="blur(20px)"
-                border="1px solid"
-                borderColor="whiteAlpha.200"
-                p={5}
+                display={{ base: 'none', md: 'flex' }}
+                flexDirection="column"
+                flex={1}
+                p="1.5px"
                 rounded="2xl"
-                position="relative"
-                overflow="hidden"
-                _before={{
-                  content: '""',
-                  position: 'absolute',
-                  top: 0, left: 0, right: 0, h: '4px',
-                  bgGradient: 'linear(to-r, whiteAlpha.600, whiteAlpha.200)',
-                }}
+                bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
+                boxShadow="0 0 25px rgba(159, 122, 234, 0.22)"
               >
-                <VStack align="start" gap={3}>
-                  <VStack align="start" gap={0.5}>
-                    <Heading size="md">Referrals</Heading>
-                    <Text color="whiteAlpha.600" fontSize="sm">Invite friends to earn additional color drops.</Text>
+                <Box
+                  flex={1}
+                  h="full"
+                  w="full"
+                  bg="gray.900"
+                  p={5}
+                  rounded="2xl"
+                  position="relative"
+                  overflow="hidden"
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="space-between"
+                  _before={{
+                    content: '""',
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, h: '3px',
+                    bgGradient: 'linear(to-r, cyan.400, purple.500, pink.500)',
+                  }}
+                >
+                  <VStack align="start" gap={4} w="full">
+                    <VStack align="start" gap={0.5}>
+                      <Heading size="md">Referrals</Heading>
+                      <Text color="whiteAlpha.600" fontSize="sm">Invite friends to earn additional color drops.</Text>
+                    </VStack>
+                    <Box p="1px" rounded="lg" bgGradient="linear(to-r, cyan.400, purple.500)" w="full">
+                      <Box px={4} py={2.5} bg="blackAlpha.700" rounded="lg" w="full">
+                        <Text color="gray.500" fontSize="xs" mb={1} textTransform="uppercase" letterSpacing="widest">Your Invite Code</Text>
+                        <Tooltip label={copiedReferral ? 'Copied!' : 'Click to copy'} placement="top">
+                          <HStack cursor="pointer" onClick={handleCopyReferral} transition="all 0.2s" justify="space-between">
+                            <Text fontWeight="black" fontSize="xl" color="white" letterSpacing="widest" fontFamily="monospace">
+                              {user?.referralCode || '------'}
+                            </Text>
+                            <Text fontSize="sm" color={copiedReferral ? 'green.400' : 'whiteAlpha.400'}>
+                              {copiedReferral ? '✓ Copied' : '⎘ Copy'}
+                            </Text>
+                          </HStack>
+                        </Tooltip>
+                      </Box>
+                    </Box>
                   </VStack>
-                  <Box px={4} py={2.5} bg="blackAlpha.500" rounded="lg" border="1px solid" borderColor="whiteAlpha.200" w="full">
-                    <Text color="gray.500" fontSize="xs" mb={1} textTransform="uppercase" letterSpacing="widest">Your Invite Code</Text>
-                    <Tooltip label={copiedReferral ? 'Copied!' : 'Click to copy'} placement="top">
-                      <HStack cursor="pointer" onClick={handleCopyReferral} transition="all 0.2s" justify="space-between">
-                        <Text fontWeight="black" fontSize="xl" color="white" letterSpacing="widest" fontFamily="monospace">
-                          {user?.referralCode || '------'}
-                        </Text>
-                        <Text fontSize="sm" color={copiedReferral ? 'green.400' : 'whiteAlpha.400'}>
-                          {copiedReferral ? '✓ Copied' : '⎘ Copy'}
-                        </Text>
-                      </HStack>
-                    </Tooltip>
-                  </Box>
 
                   {!user?.referredBy ? (
-                    <Box pt={3} borderTop="1px solid" borderColor="whiteAlpha.200" w="full">
-                      <Text color="gray.400" fontSize="xs" mb={2}>
-                        Have a friend's code? Apply to claim +15 COINS:
-                      </Text>
-                      <HStack gap={2}>
-                        <Input
-                          size="sm"
-                          placeholder="ENTER CODE (e.g. BLNK-E4F1B3)"
-                          value={dashboardRefInput}
-                          onChange={(e) => setDashboardRefInput(e.target.value.toUpperCase())}
-                          bg="blackAlpha.600"
-                          borderColor="whiteAlpha.300"
-                          color="white"
-                          rounded="lg"
-                          fontFamily="monospace"
-                          fontSize="xs"
-                          _placeholder={{ color: 'whiteAlpha.400' }}
-                        />
-                        <Button
-                          size="sm"
-                          bg="white"
-                          color="black"
-                          fontWeight="bold"
-                          fontSize="xs"
-                          px={4}
-                          rounded="lg"
-                          isLoading={isClaimingRef}
-                          onClick={handleDashboardClaimReferral}
-                          _hover={{ bg: 'gray.200' }}
-                        >
-                          CLAIM
-                        </Button>
-                      </HStack>
+                    <Box pt={4} mt="auto" borderTop="1px solid" borderColor="whiteAlpha.100" w="full">
+                      <VStack align="stretch" gap={2.5}>
+                        <HStack justify="space-between" align="center">
+                          <Text color="whiteAlpha.800" fontSize="xs" fontWeight="semibold">
+                            Have a friend's code?
+                          </Text>
+                          <Box px={2} py={0.5} rounded="md" bg="cyan.500" color="black" fontSize="2xs" fontWeight="black">
+                            +15 COINS
+                          </Box>
+                        </HStack>
+                        <HStack gap={2}>
+                          <Input
+                            size="sm"
+                            placeholder="ENTER CODE (e.g. BLNK-E4F1B3)"
+                            value={dashboardRefInput}
+                            onChange={(e) => setDashboardRefInput(e.target.value.toUpperCase())}
+                            bg="blackAlpha.600"
+                            borderColor="whiteAlpha.300"
+                            color="white"
+                            rounded="lg"
+                            fontFamily="monospace"
+                            fontSize="xs"
+                            _placeholder={{ color: 'whiteAlpha.400' }}
+                          />
+                          <Button
+                            size="sm"
+                            bgGradient="linear(to-r, cyan.400, purple.500)"
+                            color="white"
+                            fontWeight="bold"
+                            fontSize="xs"
+                            px={4}
+                            rounded="lg"
+                            isLoading={isClaimingRef}
+                            onClick={handleDashboardClaimReferral}
+                            _hover={{ bgGradient: 'linear(to-r, cyan.300, purple.400)' }}
+                          >
+                            CLAIM
+                          </Button>
+                        </HStack>
+                      </VStack>
                     </Box>
                   ) : (
-                    <Text fontSize="xs" color="green.400" fontWeight="semibold">
-                      ✓ Referred by {user.referredBy}
-                    </Text>
+                    <Box pt={4} mt="auto" borderTop="1px solid" borderColor="whiteAlpha.100" w="full">
+                      <Flex
+                        align="center"
+                        justify="space-between"
+                        px={4}
+                        py={3}
+                        bg="whiteAlpha.50"
+                        rounded="xl"
+                        border="1px solid"
+                        borderColor="whiteAlpha.100"
+                      >
+                        <HStack gap={2.5}>
+                          <Box w={2} h={2} rounded="full" bg="green.400" boxShadow="0 0 8px rgba(72, 187, 120, 0.8)" />
+                          <Text fontSize="xs" color="whiteAlpha.700" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
+                            Referred By
+                          </Text>
+                        </HStack>
+                        <Text fontSize="sm" color="green.300" fontWeight="black" fontFamily="monospace">
+                          {user.referredBy}
+                        </Text>
+                      </Flex>
+                    </Box>
                   )}
-                </VStack>
+                </Box>
               </Box>
 
-              {/* Referrals - compact strip on mobile */}
+              {/* Referrals - compact strip on mobile with BLNK Gradient Border Wrapper */}
               <Box display={{ base: 'block', md: 'none' }} w="full">
                 <Tooltip label={copiedReferral ? 'Copied!' : 'Tap to copy invite code'} placement="top">
-                  <Flex
-                    align="center"
-                    justify="space-between"
-                    bg="whiteAlpha.100"
-                    border="1px solid"
-                    borderColor="whiteAlpha.200"
-                    px={4}
-                    py={3}
+                  <Box
+                    p="1.5px"
                     rounded="xl"
-                    cursor="pointer"
-                    onClick={handleCopyReferral}
-                    position="relative"
-                    overflow="hidden"
-                    _before={{
-                      content: '""',
-                      position: 'absolute',
-                      top: 0, left: 0, right: 0, h: '2px',
-                      bgGradient: 'linear(to-r, whiteAlpha.600, whiteAlpha.200)',
-                    }}
-                    _hover={{ bg: 'whiteAlpha.200' }}
-                    transition="all 0.2s"
+                    bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
+                    boxShadow="0 0 20px rgba(159, 122, 234, 0.2)"
                   >
-                    <HStack gap={2}>
-                      <Text fontSize="xs" color="whiteAlpha.700" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">Referral</Text>
-                      <Text fontWeight="black" fontSize="md" color="white" letterSpacing="widest" fontFamily="monospace">
-                        {user?.referralCode || '------'}
+                    <Flex
+                      align="center"
+                      justify="space-between"
+                      bg="gray.900"
+                      px={4}
+                      py={3}
+                      rounded="xl"
+                      cursor="pointer"
+                      onClick={handleCopyReferral}
+                      position="relative"
+                      overflow="hidden"
+                      _before={{
+                        content: '""',
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, h: '2px',
+                        bgGradient: 'linear(to-r, cyan.400, purple.500, pink.500)',
+                      }}
+                      _hover={{ bg: 'whiteAlpha.200' }}
+                      transition="all 0.2s"
+                    >
+                      <HStack gap={2}>
+                        <Text fontSize="xs" color="whiteAlpha.700" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">Referral</Text>
+                        <Text fontWeight="black" fontSize="md" color="white" letterSpacing="widest" fontFamily="monospace">
+                          {user?.referralCode || '------'}
+                        </Text>
+                      </HStack>
+                      <Text fontSize="xs" color={copiedReferral ? 'green.400' : 'whiteAlpha.400'} fontWeight="semibold">
+                        {copiedReferral ? '✓ Copied' : '⎘ Copy'}
                       </Text>
-                    </HStack>
-                    <Text fontSize="xs" color={copiedReferral ? 'green.400' : 'whiteAlpha.400'} fontWeight="semibold">
-                      {copiedReferral ? '✓ Copied' : '⎘ Copy'}
-                    </Text>
-                  </Flex>
+                    </Flex>
+                  </Box>
                 </Tooltip>
 
                 {!user?.referredBy ? (
-                  <Box mt={2} px={3} py={2.5} bg="whiteAlpha.50" rounded="xl" border="1px solid" borderColor="whiteAlpha.100">
-                    <Text color="gray.400" fontSize="xs" mb={1.5}>
-                      Have an invite code? Earn +15 COINS:
-                    </Text>
+                  <Box mt={2} px={3} py={3} bg="whiteAlpha.50" rounded="xl" border="1px solid" borderColor="whiteAlpha.100">
+                    <HStack justify="space-between" align="center" mb={2}>
+                      <Text color="whiteAlpha.800" fontSize="xs" fontWeight="semibold">
+                        Have an invite code?
+                      </Text>
+                      <Box px={2} py={0.5} rounded="md" bg="cyan.500" color="black" fontSize="2xs" fontWeight="black">
+                        +15 COINS
+                      </Box>
+                    </HStack>
                     <HStack gap={2}>
                       <Input
                         size="sm"
@@ -801,39 +872,60 @@ export default function Dashboard() {
                       />
                       <Button
                         size="sm"
-                        bg="white"
-                        color="black"
+                        bgGradient="linear(to-r, cyan.400, purple.500)"
+                        color="white"
                         fontWeight="bold"
                         fontSize="xs"
                         px={4}
                         rounded="lg"
                         isLoading={isClaimingRef}
                         onClick={handleDashboardClaimReferral}
-                        _hover={{ bg: 'gray.200' }}
+                        _hover={{ bgGradient: 'linear(to-r, cyan.300, purple.400)' }}
                       >
                         CLAIM
                       </Button>
                     </HStack>
                   </Box>
                 ) : (
-                  <Text mt={1.5} px={1} fontSize="xs" color="green.400" fontWeight="semibold">
-                    ✓ Referred by {user.referredBy}
-                  </Text>
+                  <Flex
+                    mt={2}
+                    align="center"
+                    justify="space-between"
+                    px={3}
+                    py={2.5}
+                    bg="whiteAlpha.50"
+                    rounded="xl"
+                    border="1px solid"
+                    borderColor="whiteAlpha.100"
+                  >
+                    <HStack gap={2}>
+                      <Box w={2} h={2} rounded="full" bg="green.400" />
+                      <Text fontSize="xs" color="whiteAlpha.700" fontWeight="bold">Referred By</Text>
+                    </HStack>
+                    <Text fontSize="xs" color="green.300" fontWeight="black" fontFamily="monospace">
+                      {user.referredBy}
+                    </Text>
+                  </Flex>
                 )}
               </Box>
             </Flex>
 
-            {/* --- Play CTA --- */}
+            {/* --- Play CTA with signature BLNK Cyan->Purple->Pink Gradient --- */}
             <Button
               h={{ base: '60px', md: '70px' }}
               w="full"
               fontSize={{ base: 'xl', md: '2xl' }}
               fontWeight="black"
               letterSpacing="widest"
-              bg="white"
-              color="black"
+              bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
+              color="white"
               rounded="2xl"
-              _hover={{ transform: 'translateY(-3px)', boxShadow: '0 16px 36px rgba(255,255,255,0.25)' }}
+              boxShadow="0 0 35px rgba(159, 122, 234, 0.45)"
+              _hover={{
+                bgGradient: 'linear(to-r, cyan.300, purple.400, pink.400)',
+                transform: 'translateY(-3px)',
+                boxShadow: '0 16px 36px rgba(236, 72, 153, 0.5)',
+              }}
               transition="all 0.3s ease"
               onClick={() => {
                 soundManager.playClick();

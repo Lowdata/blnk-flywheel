@@ -1,5 +1,19 @@
 import type { NextConfig } from 'next';
 
+const ContentSecurityPolicy = `
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  img-src 'self' data: https: blob:;
+  font-src 'self' https://fonts.gstatic.com;
+  connect-src 'self' https://*.walletconnect.com wss://*.walletconnect.com https://*.walletconnect.org wss://*.walletconnect.org https://registry.walletconnect.com https://*.infura.io https://*.alchemy.com https://rpc.ankr.com https://cloudflare-eth.com https://eth-mainnet.g.alchemy.com https://eth-sepolia.g.alchemy.com https://polygon-mainnet.g.alchemy.com https://base-mainnet.g.alchemy.com;
+  frame-src 'self' https://*.walletconnect.com https://*.walletconnect.org;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  upgrade-insecure-requests;
+`.replace(/\s{2,}/g, ' ').trim();
+
 const nextConfig: NextConfig = {
     async headers() {
         return [
@@ -19,6 +33,10 @@ const nextConfig: NextConfig = {
                     { key: 'X-XSS-Protection', value: '1; mode=block' },
                     // HSTS — enforce HTTPS for 1 year
                     { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+                    // Content Security Policy — prevents XSS, restricts allowed origins
+                    { key: 'Content-Security-Policy', value: ContentSecurityPolicy },
+                    // Allows wallet popup windows (RainbowKit/WalletConnect use popups)
+                    { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
                 ],
             },
             {

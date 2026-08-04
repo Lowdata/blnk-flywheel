@@ -2,6 +2,7 @@ import { SessionOptions } from 'iron-session';
 
 export interface SessionData {
   nonce?: string;
+  nonceIssuedAt?: number; // Unix timestamp (ms) for rate limiting
   siwe?: {
     address: string;
     chainId: number;
@@ -21,6 +22,8 @@ export const sessionOptions: SessionOptions = {
   cookieName: 'blnk_siwe',
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,          // Security: never expose cookie to JavaScript
+    sameSite: 'lax',         // CSRF protection: restrict cross-site sending
+    maxAge: 60 * 60 * 24,   // 24 hours
   },
 };
-

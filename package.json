@@ -15,11 +15,15 @@
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@rainbow-me/rainbowkit": "^2.2.11",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/rapier": "^2.2.0",
+    "@tanstack/react-query": "^5.101.4",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "@x402/core": "^2.20.0",
+    "@x402/svm": "^2.20.0",
     "ethers": "^6.17.0",
     "framer-motion": "^12.42.2",
     "iron-session": "^8.0.4",
@@ -28,7 +32,9 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "siwe": "^3.0.0",
-    "three": "^0.185.1"
+    "three": "^0.185.1",
+    "viem": "^2.55.10",
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

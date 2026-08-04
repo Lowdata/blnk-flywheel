@@ -16,6 +16,8 @@ import {
   Icon,
   useToast,
 } from '@chakra-ui/react';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -25,6 +27,15 @@ interface OnboardingModalProps {
   onLinkTwitter: (username: string) => Promise<boolean>;
   onRefreshUser: () => Promise<void>;
 }
+
+// Wallet brand badges shown in step 1
+const WALLET_BADGES = [
+  { name: 'MetaMask', color: '#e2761b' },
+  { name: 'Phantom', color: '#ab9ff2' },
+  { name: 'Rainbow', color: '#ff6b9d' },
+  { name: 'Coinbase', color: '#0052ff' },
+  { name: 'Trust', color: '#3375bb' },
+];
 
 export default function OnboardingModal({
   isOpen,
@@ -40,13 +51,40 @@ export default function OnboardingModal({
   const [activeStep, setActiveStep] = useState<number>(!user ? 1 : !user.twitterLinked ? 2 : 3);
   const toast = useToast();
 
+  // RainbowKit modal hook — opens the multi-wallet picker
+  const { openConnectModal } = useConnectModal();
+  const { isConnected } = useAccount();
+
   useEffect(() => {
     if (isOpen) {
-      if (!user) setActiveStep(1);
-      else if (!user.twitterLinked) setActiveStep(2);
-      else setActiveStep(3);
+      if (!user) {
+        setActiveStep(1);
+      } else if (!user.twitterLinked) {
+        setActiveStep(2);
+      } else {
+        if (activeStep === 1) {
+          // Returning user who already linked Twitter just connected wallet
+          onClose();
+        } else if (activeStep === 2) {
+          // User just linked Twitter, proceed to referral step
+          setActiveStep(3);
+        }
+      }
     }
   }, [isOpen, user]);
+
+  // When wallet connects (wagmi reports isConnected), advance from step 1
+  useEffect(() => {
+    if (isConnected && activeStep === 1 && isOpen && !user) {
+      // SIWE signing is handled in page.tsx; onboarding stays open until user is populated
+      // Nothing to do here — user state update in parent will re-trigger this modal's useEffect above
+    }
+  }, [isConnected, activeStep, isOpen, user]);
+
+  const handleConnectClick = () => {
+    // Use RainbowKit's modal — supports MetaMask, Phantom, Coinbase, WalletConnect etc.
+    openConnectModal?.();
+  };
 
   const handleClaimReferral = async () => {
     if (!referralInput.trim()) {
@@ -187,7 +225,7 @@ export default function OnboardingModal({
               </Box>
             </Flex>
 
-            {/* Step 1: Wallet Connect */}
+            {/* --- Step 1: Wallet Connect --- */}
             {activeStep === 1 && (
               <VStack
                 p={5}
@@ -205,9 +243,38 @@ export default function OnboardingModal({
                     LINK CRYPTOGRAPHIC WALLET
                   </Text>
                   <Text color="gray.400" fontSize="xs">
-                    Connect via SIWE to establish identity on the Whitelist Flywheel.
+                    Choose your wallet to connect via SIWE and establish your identity.
                   </Text>
                 </VStack>
+
+                {/* Wallet brand badges */}
+                <HStack gap={2} wrap="wrap" justify="center">
+                  {WALLET_BADGES.map((w) => (
+                    <Flex
+                      key={w.name}
+                      align="center"
+                      gap={1.5}
+                      px={2}
+                      py={1}
+                      bg="whiteAlpha.100"
+                      border="1px solid"
+                      borderColor="whiteAlpha.200"
+                      borderRadius="md"
+                    >
+                      <Box
+                        w="8px"
+                        h="8px"
+                        borderRadius="full"
+                        bg={w.color}
+                        boxShadow={`0 0 6px ${w.color}`}
+                      />
+                      <Text fontSize="2xs" color="whiteAlpha.700" fontWeight="medium">
+                        {w.name}
+                      </Text>
+                    </Flex>
+                  ))}
+                </HStack>
+
                 <Button
                   w="full"
                   bg="#d946ef"
@@ -216,15 +283,15 @@ export default function OnboardingModal({
                   fontSize="2xs"
                   py={6}
                   _hover={{ bg: '#f472b6', boxShadow: '0 0 15px rgba(244, 114, 182, 0.4)' }}
-                  onClick={onConnectWallet}
+                  onClick={handleConnectClick}
                 >
-                  INITIALIZE SIWE CONNECTION
+                  CHOOSE WALLET & CONNECT
                 </Button>
               </VStack>
             )}
 
+            {/* --- Step 2: Link Twitter --- */}
             {activeStep === 2 && (
-              /* Step 2: Link Twitter */
               <VStack
                 p={5}
                 bg="#060308"
@@ -243,7 +310,7 @@ export default function OnboardingModal({
                     Connect your X (Twitter) account to enable social tasks and claim +10 COINS.
                   </Text>
                 </VStack>
-                
+
                 <VStack gap={3}>
                   <Input
                     placeholder="ENTER @USERNAME"
@@ -281,8 +348,8 @@ export default function OnboardingModal({
               </VStack>
             )}
 
+            {/* --- Step 3: Referral Code --- */}
             {activeStep === 3 && (
-              /* Step 3: Referral Code */
               <VStack
                 p={5}
                 bg="#060308"
@@ -323,9 +390,9 @@ export default function OnboardingModal({
                       fontWeight="medium"
                       fontSize="2xs"
                       py={6}
-                      isLoading={isClaiming}
+                      _hover={{ bg: '#f472b6', boxShadow: '0 0 15px rgba(244, 114, 182, 0.4)' }}
                       onClick={handleClaimReferral}
-                      _hover={{ bg: '#f472b6' }}
+                      isLoading={isClaiming}
                     >
                       {referralInput.trim() ? 'CLAIM & ENTER (+15 COINS)' : 'ENTER THE FLYWHEEL'}
                     </Button>

@@ -647,7 +647,7 @@ const Scene: ForwardRefRenderFunction<
     return (
         <>
             <Environment
-                files="https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/dancing_hall_1k.hdr"
+                files="/hdr/dancing_hall_1k.hdr"
             />
             <ambientLight intensity={2} />
             <color attach="background" args={['#16161a']} />

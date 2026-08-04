@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
         const walletAddress: string = session.siwe.address;
 
-        // ── Anti-spam: rate limit per wallet (MongoDB backed) ─────────────
+        // -- Anti-spam: rate limit per wallet (MongoDB backed) -------------
         const allowed = await checkRateLimit(walletAddress);
         if (!allowed) {
             return NextResponse.json(
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // ── Server-side RNG (crypto — never Math.random) ──────────────────
+        // -- Server-side RNG (crypto — never Math.random) ------------------
         // Odds: GTD 5%, FCFS 30%, LOSS 65%
         const rand = secureRandom();
         let outcome: 'GTD' | 'FCFS' | 'LOSS' = 'LOSS';
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
             outcome = 'FCFS';
         }
 
-        // ── Single atomic update: Coin deduction + Reward creation ────────
+        // -- Single atomic update: Coin deduction + Reward creation --------
         const updateOp: any = {
             $inc: { coins: -COINS_PER_PLAY }
         };

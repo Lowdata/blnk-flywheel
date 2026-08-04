@@ -14,16 +14,16 @@ import { soundManager } from '@/lib/sound';
 import SoundButton from '@/components/SoundButton';
 import * as THREE from 'three';
 
-/* ─── Game Phase State Machine ──────────────────────────────────────────────
+/* --- Game Phase State Machine ----------------------------------------------
    intro        → Big "PLAY GAME" button. Controls hidden.
    spending     → API call in-flight + coin arc animation.
    playing      → Joystick + DROP enabled. User positions claw.
    grabbing     → Claw animation running. Controls disabled.
    revealing    → Ball centers, player clicks it open, then sees the outcome.
-   ──────────────────────────────────────────────────────────────────────── */
+   ------------------------------------------------------------------------ */
 type Phase = 'intro' | 'spending' | 'playing' | 'grabbing' | 'revealing';
 
-/* ─── Outcome Modal Types ────────────────────────────────────────────────── */
+/* --- Outcome Modal Types -------------------------------------------------- */
 type OutcomeCard = { outcome: string; isWin: boolean } | null;
 
 function ResponsiveCamera({ isCameraResetting }: { isCameraResetting?: boolean }) {
@@ -102,7 +102,7 @@ function WinColorOverlay() {
     );
 }
 
-/* ─── Coin Arc ───────────────────────────────────────────────────────────── */
+/* --- Coin Arc ------------------------------------------------------------- */
 function CoinArc({ visible }: { visible: boolean }) {
     return (
         <div
@@ -203,11 +203,11 @@ export default function GamePage() {
         };
     }, [mounted]);
 
-    /* ── PLAY button handler ───────────────────────────────────────────────
+    /* -- PLAY button handler -----------------------------------------------
        1. API call fires immediately on PLAY click (deduct 3 coins, get outcome)
        2. Coin arc animation plays during the ~300ms network round-trip
        3. After animation: joystick + DROP unlock
-    ─────────────────────────────────────────────────────────────────────── */
+    ----------------------------------------------------------------------- */
     const handlePlay = useCallback(async () => {
         if (phase !== 'intro' || !user) return;
         if ((user?.coins ?? 0) < 3) {
@@ -246,7 +246,7 @@ export default function GamePage() {
         }
     }, [phase, user, toast]);
 
-    /* ── DROP handler — starts claw animation, then reveals outcome ───────── */
+    /* -- DROP handler — starts claw animation, then reveals outcome --------- */
     const handleDrop = useCallback(() => {
         if (phase !== 'playing') return;
         soundManager.playDrop();
@@ -285,7 +285,7 @@ export default function GamePage() {
         ref.current?.clickCapsule();
     }, [phase, revealStep]);
 
-    /* ── Close modal + reset scene ─────────────────────────────────────── */
+    /* -- Close modal + reset scene --------------------------------------- */
     const handleClose = useCallback(() => {
         setOutcomeCard(null);
         setRevealStep(null);
@@ -295,7 +295,7 @@ export default function GamePage() {
         ref.current?.setWinColorMode?.(false);
     }, []);
 
-    /* ── Share on X ──────────────────────────────────────────────────────── */
+    /* -- Share on X -------------------------------------------------------- */
     const shareOnX = useCallback(() => {
         const outcome = outcomeCard?.outcome ?? '';
         const text = encodeURIComponent(
@@ -367,7 +367,7 @@ export default function GamePage() {
                 {/* Coin arc sprite */}
                 <CoinArc visible={coinArcVisible} />
 
-                {/* ── 3D Canvas ─────────────────────────────────────────── */}
+                {/* -- 3D Canvas ------------------------------------------- */}
                 <Canvas
                     shadows
                     camera={{ position: [0, 2.1, 2.2], fov: 55 }}
@@ -382,7 +382,7 @@ export default function GamePage() {
                     <Scene ref={ref} setIsLoading={setIsLoading} setProgress={setProgress} />
                 </Canvas>
 
-                {/* ── Loading overlay ────────────────────────────────────── */}
+                {/* -- Loading overlay -------------------------------------- */}
                 <Modal isOpen={isLoading} onClose={() => {}}>
                     <ModalOverlay bg="black" />
                     <ModalContent my={0} py="120px" h="full" display="flex" justifyContent="end" alignItems="center" bg="none" shadow="none">
@@ -390,7 +390,7 @@ export default function GamePage() {
                     </ModalContent>
                 </Modal>
 
-                {/* ── HUD: top bar ──────────────────────────────────────── */}
+                {/* -- HUD: top bar ---------------------------------------- */}
                 <div className="hud-container">
                     {/* Monochrome Game Vibe Dashboard Home button */}
                     <button
@@ -442,7 +442,7 @@ export default function GamePage() {
                     </div>
                 </div>
 
-                {/* ── INTRO phase: big PLAY GAME button ─────────────────── */}
+                {/* -- INTRO phase: big PLAY GAME button ------------------- */}
                 {phase === 'intro' && !isLoading && (
                     <div style={{
                         position: 'absolute',
@@ -522,7 +522,7 @@ export default function GamePage() {
                     </div>
                 )}
 
-                {/* ── SPENDING phase: "processing" text ─────────────────── */}
+                {/* -- SPENDING phase: "processing" text ------------------- */}
                 {phase === 'spending' && (
                     <div style={{
                         position: 'absolute',
@@ -544,7 +544,7 @@ export default function GamePage() {
                     </div>
                 )}
 
-                {/* ── PLAYING phase: joystick + drop button ─────────────── */}
+                {/* -- PLAYING phase: joystick + drop button --------------- */}
                 {(phase === 'playing' || phase === 'grabbing') && (
                     <>
                         <JoystickControl
@@ -566,7 +566,7 @@ export default function GamePage() {
                     </>
                 )}
 
-                {/* ── REVEALING: "click to open" prompt ─────────────────── */}
+                {/* -- REVEALING: "click to open" prompt ------------------- */}
                 {phase === 'revealing' && revealStep === 'ready' && (
                     <div style={{
                         position: 'absolute', top: '14%', width: '100%', textAlign: 'center',
@@ -595,7 +595,7 @@ export default function GamePage() {
                     />
                 )}
 
-                {/* ── Outcome modal ──────────────────────────────────────── */}
+                {/* -- Outcome modal ---------------------------------------- */}
                 {outcomeCard && (
                     <div style={{
                         position: 'absolute',

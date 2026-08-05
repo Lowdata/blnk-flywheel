@@ -163,7 +163,7 @@ export default function OnboardingModal({
                 letterSpacing="2px"
                 textAlign="center"
               >
-                SYSTEM ACCESS REQUIRED
+                WELCOME TO BLNK
               </Text>
               <Text
                 fontWeight="black"
@@ -172,7 +172,7 @@ export default function OnboardingModal({
                 textAlign="center"
                 letterSpacing="tight"
               >
-                ONBOARDING PROTOCOL
+                LET'S GET STARTED
               </Text>
             </VStack>
 
@@ -246,10 +246,10 @@ export default function OnboardingModal({
                 </Icon>
                 <VStack gap={1}>
                   <Text fontWeight="bold" fontSize="lg" color="white">
-                    LINK CRYPTOGRAPHIC WALLET
+                    CONNECT WALLET
                   </Text>
                   <Text color="whiteAlpha.600" fontSize="xs">
-                    Choose your wallet to connect via SIWE and establish your identity.
+                    Connect your wallet to create your account and start playing.
                   </Text>
                 </VStack>
 
@@ -291,7 +291,7 @@ export default function OnboardingModal({
                   _hover={{ bg: 'gray.200', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
                   onClick={onConnectWallet}
                 >
-                  CHOOSE WALLET & CONNECT
+                  CONNECT WALLET
                 </Button>
               </VStack>
             )}
@@ -315,7 +315,7 @@ export default function OnboardingModal({
                     LINK X (TWITTER)
                   </Text>
                   <Text color="whiteAlpha.600" fontSize="xs">
-                    Connect your X account to enable social tasks and claim +10 COINS.
+                    Connect your X account to claim your +10 COINS bonus.
                   </Text>
                 </VStack>
 
@@ -376,10 +376,10 @@ export default function OnboardingModal({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
                   </Icon>
                   <Text fontWeight="bold" fontSize="lg" color="white">
-                    INVITATION REFERRAL
+                    REFERRAL CODE
                   </Text>
                   <Text color="whiteAlpha.600" fontSize="xs">
-                    Enter an invitation referral code to claim +15 COINS welcome bonus.
+                    Got a referral code? Enter it below for a +15 COINS bonus.
                   </Text>
                 </VStack>
 
@@ -412,7 +412,7 @@ export default function OnboardingModal({
                       onClick={handleClaimReferral}
                       isLoading={isClaiming}
                     >
-                      {referralInput.trim() ? 'CLAIM & ENTER (+15 COINS)' : 'ENTER THE FLYWHEEL'}
+                      {referralInput.trim() ? 'CLAIM & PLAY (+15 COINS)' : 'SKIP & PLAY'}
                     </Button>
                   </VStack>
                 ) : (

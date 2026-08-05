@@ -132,7 +132,7 @@ export default function OnboardingModal({
     <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg" closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay bg="rgba(0, 0, 0, 0.88)" backdropFilter="blur(10px)" />
       <ModalContent
-        bg="#0a0a0c"
+        bg="#050a05"
         border="1px solid"
         borderColor="whiteAlpha.200"
         boxShadow="0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(255, 255, 255, 0.04)"
@@ -181,7 +181,7 @@ export default function OnboardingModal({
               <Box
                 flex={1}
                 p={2}
-                bg={user ? '#0e0e11' : '#141418'}
+                bg={user ? '#081108' : '#0c180c'}
                 border="1px solid"
                 borderColor={user ? 'whiteAlpha.400' : 'whiteAlpha.200'}
                 borderRadius="lg"
@@ -195,7 +195,7 @@ export default function OnboardingModal({
               <Box
                 flex={1}
                 p={2}
-                bg={user?.twitterLinked ? '#0e0e11' : '#0a0a0c'}
+                bg={user?.twitterLinked ? '#081108' : '#050a05'}
                 border="1px solid"
                 borderColor={user?.twitterLinked ? 'whiteAlpha.400' : 'whiteAlpha.100'}
                 borderRadius="lg"
@@ -213,7 +213,7 @@ export default function OnboardingModal({
               <Box
                 flex={1}
                 p={2}
-                bg={user?.referredBy ? '#0e0e11' : '#0a0a0c'}
+                bg={user?.referredBy ? '#081108' : '#050a05'}
                 border="1px solid"
                 borderColor={user?.referredBy ? 'whiteAlpha.400' : 'whiteAlpha.100'}
                 borderRadius="lg"
@@ -233,7 +233,7 @@ export default function OnboardingModal({
             {activeStep === 1 && (
               <VStack
                 p={5}
-                bg="#0e0e12"
+                bg="#071207"
                 border="1px solid"
                 borderColor="whiteAlpha.200"
                 borderRadius="2xl"
@@ -282,13 +282,13 @@ export default function OnboardingModal({
 
                 <Button
                   w="full"
-                  bg="white"
+                  bg="green.400"
                   color="black"
                   fontWeight="bold"
                   fontSize="xs"
                   py={6}
                   rounded="xl"
-                  _hover={{ bg: 'gray.200', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
+                  _hover={{ bg: 'green.300', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
                   onClick={onConnectWallet}
                 >
                   CONNECT WALLET
@@ -300,7 +300,7 @@ export default function OnboardingModal({
             {activeStep === 2 && (
               <VStack
                 p={5}
-                bg="#0e0e12"
+                bg="#071207"
                 border="1px solid"
                 borderColor="whiteAlpha.200"
                 borderRadius="2xl"
@@ -324,7 +324,7 @@ export default function OnboardingModal({
                     placeholder="ENTER @USERNAME"
                     value={twitterUsername}
                     onChange={(e) => setTwitterUsername(e.target.value)}
-                    bg="#0a0a0c"
+                    bg="#050a05"
                     border="1px solid"
                     borderColor="whiteAlpha.300"
                     color="white"
@@ -336,13 +336,13 @@ export default function OnboardingModal({
                   />
                   <Button
                     w="full"
-                    bg="white"
+                    bg="green.400"
                     color="black"
                     fontWeight="bold"
                     fontSize="xs"
                     py={6}
                     rounded="xl"
-                    _hover={{ bg: 'gray.200', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
+                    _hover={{ bg: 'green.300', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
                     onClick={async () => {
                       if (!twitterUsername.trim()) {
                         toast({ title: 'Please enter your Twitter username', status: 'warning' });
@@ -364,7 +364,7 @@ export default function OnboardingModal({
             {activeStep === 3 && (
               <VStack
                 p={5}
-                bg="#0e0e12"
+                bg="#071207"
                 border="1px solid"
                 borderColor="whiteAlpha.200"
                 borderRadius="2xl"
@@ -389,7 +389,7 @@ export default function OnboardingModal({
                       placeholder="ENTER CODE (e.g. BLNK-E4F1B3)"
                       value={referralInput}
                       onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
-                      bg="#0a0a0c"
+                      bg="#050a05"
                       border="1px solid"
                       borderColor="whiteAlpha.300"
                       color="white"
@@ -402,13 +402,13 @@ export default function OnboardingModal({
                     />
                     <Button
                       w="full"
-                      bg="white"
+                      bg="green.400"
                       color="black"
                       fontWeight="bold"
                       fontSize="xs"
                       py={6}
                       rounded="xl"
-                      _hover={{ bg: 'gray.200', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
+                      _hover={{ bg: 'green.300', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
                       onClick={handleClaimReferral}
                       isLoading={isClaiming}
                     >
@@ -422,13 +422,13 @@ export default function OnboardingModal({
                     </Text>
                     <Button
                       w="full"
-                      bg="white"
+                      bg="green.400"
                       color="black"
                       fontWeight="bold"
                       fontSize="xs"
                       py={6}
                       rounded="xl"
-                      _hover={{ bg: 'gray.200', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(255,255,255,0.2)' }}
+                      _hover={{ bg: 'green.300', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
                       onClick={onClose}
                     >
                       ENTER THE CLAW MACHINE →

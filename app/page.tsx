@@ -331,7 +331,7 @@ export default function Dashboard() {
     return (
       <Box minH="100vh" bg="gray.900" color="white" display="flex" alignItems="center" justifyContent="center">
         <VStack gap={6} w="full" maxW="3xl" px={8}>
-          <Skeleton height="60px" width="200px" startColor="purple.900" endColor="purple.700" borderRadius="xl" />
+          <Skeleton height="60px" width="200px" startColor="green.900" endColor="green.700" borderRadius="xl" />
           <Skeleton height="24px" width="140px" startColor="gray.800" endColor="gray.700" borderRadius="md" />
           <Skeleton height="80px" width="full" startColor="gray.800" endColor="gray.700" borderRadius="2xl" />
           <HStack w="full" gap={6}>
@@ -358,7 +358,7 @@ export default function Dashboard() {
       className="animate-fade-in"
     >
       {/* Background Ambient Glow */}
-      <Box position="absolute" top="-20%" left="-10%" w="50vw" h="50vw" bg="purple.600" filter="blur(150px)" opacity={0.5} borderRadius="full" pointerEvents="none" />
+      <Box position="absolute" top="-20%" left="-10%" w="50vw" h="50vw" bg="green.800" filter="blur(150px)" opacity={0.5} borderRadius="full" pointerEvents="none" />
       <Box position="absolute" bottom="-20%" right="-10%" w="50vw" h="50vw" bg="teal.400" filter="blur(150px)" opacity={0.4} borderRadius="full" pointerEvents="none" />
 
       {/* --- Sticky Header / Navbar --- */}
@@ -383,7 +383,7 @@ export default function Dashboard() {
           fontSize="xl"
           letterSpacing="0.25em"
           textTransform="uppercase"
-          bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
+          bgGradient="linear(to-r, green.400, green.600, green.800)"
           bgClip="text"
         >
           BLNK
@@ -448,12 +448,12 @@ export default function Dashboard() {
                   borderRadius="lg"
                   border="1px solid"
                   borderColor="whiteAlpha.200"
-                  _hover={{ bg: 'whiteAlpha.200', borderColor: 'cyan.500' }}
+                  _hover={{ bg: 'whiteAlpha.200', borderColor: 'green.500' }}
                   transition="all 0.2s"
                   gap={1.5}
                   display={{ base: 'none', md: 'flex' }}
                 >
-                  <Text fontFamily="monospace" fontSize="sm" fontWeight="semibold" color="cyan.300">
+                  <Text fontFamily="monospace" fontSize="sm" fontWeight="semibold" color="green.300">
                     {displayAddress.slice(0, 6)}…{displayAddress.slice(-4)}
                   </Text>
                   <Text fontSize="xs" color={copiedAddress ? 'green.400' : 'whiteAlpha.400'}>
@@ -540,12 +540,12 @@ export default function Dashboard() {
                   fontSize="2xl"
                   fontWeight="bold"
                   rounded="full"
-                  bgGradient="linear(to-r, cyan.400, purple.500)"
+                  bgGradient="linear(to-r, green.400, green.600)"
                   color="white"
                   isLoading
                   loadingText="Signing in…"
                   transition="all 0.3s ease"
-                  boxShadow="0 0 30px rgba(159, 122, 234, 0.6)"
+                  boxShadow="0 0 30px rgba(72, 187, 120, 0.6)"
                 />
                 <Text fontSize="xs" color="whiteAlpha.500">
                   Sign the message in your wallet to continue
@@ -559,7 +559,7 @@ export default function Dashboard() {
                     letterSpacing="0.2em"
                     fontWeight="black"
                     textTransform="uppercase"
-                    bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
+                    bgGradient="linear(to-r, green.400, green.600, green.800)"
                     bgClip="text"
                   >
                     BLNK
@@ -575,9 +575,9 @@ export default function Dashboard() {
                   fontSize="2xl"
                   fontWeight="bold"
                   rounded="full"
-                  bgGradient="linear(to-r, cyan.400, purple.500)"
+                  bgGradient="linear(to-r, green.400, green.600)"
                   color="white"
-                  _hover={{ bgGradient: 'linear(to-r, cyan.300, purple.400)', transform: 'scale(1.05)' }}
+                  _hover={{ bgGradient: 'linear(to-r, green.300, green.500)', transform: 'scale(1.05)' }}
                   transition="all 0.3s ease"
                   className="animate-pulse-glow"
                   onClick={connectWallet}
@@ -605,7 +605,7 @@ export default function Dashboard() {
                 letterSpacing="0.2em"
                 fontWeight="black"
                 textTransform="uppercase"
-                bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
+                bgGradient="linear(to-r, green.400, green.600, green.800)"
                 bgClip="text"
               >
                 BLNK
@@ -623,8 +623,8 @@ export default function Dashboard() {
                 flex={1}
                 p="1.5px"
                 rounded="2xl"
-                bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
-                boxShadow="0 0 25px rgba(159, 122, 234, 0.22)"
+                bgGradient="linear(to-r, green.400, green.600, green.800)"
+                boxShadow="0 0 25px rgba(72, 187, 120, 0.22)"
                 display="flex"
                 flexDirection="column"
               >
@@ -641,7 +641,7 @@ export default function Dashboard() {
                     content: '""',
                     position: 'absolute',
                     top: 0, left: 0, right: 0, h: '3px',
-                    bgGradient: 'linear(to-r, cyan.400, purple.500, pink.500)',
+                    bgGradient: 'linear(to-r, green.400, green.600, green.800)',
                   }}
                 >
                   <HStack justify="space-between" align="center" mb={3}>
@@ -661,7 +661,7 @@ export default function Dashboard() {
                           <Text fontSize="sm" color="whiteAlpha.900" fontWeight="medium">{task.description}</Text>
                           <Button
                             size="sm"
-                            bgGradient={!isCompleted ? 'linear(to-r, cyan.400, purple.500)' : undefined}
+                            bgGradient={!isCompleted ? 'linear(to-r, green.400, green.600)' : undefined}
                             bg={isCompleted ? 'whiteAlpha.200' : undefined}
                             color={isCompleted ? 'whiteAlpha.500' : 'white'}
                             fontWeight="bold"
@@ -673,7 +673,7 @@ export default function Dashboard() {
                             isLoading={!!isVerifying}
                             isDisabled={isCompleted}
                             onClick={() => handleTaskClick(task)}
-                            _hover={!isCompleted ? { bgGradient: 'linear(to-r, cyan.300, purple.400)' } : {}}
+                            _hover={!isCompleted ? { bgGradient: 'linear(to-r, green.300, green.500)' } : {}}
                           >
                             {isCompleted ? 'Done' : `+${task.rewardAmount}`}
                           </Button>
@@ -691,8 +691,8 @@ export default function Dashboard() {
                 flex={1}
                 p="1.5px"
                 rounded="2xl"
-                bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
-                boxShadow="0 0 25px rgba(159, 122, 234, 0.22)"
+                bgGradient="linear(to-r, green.400, green.600, green.800)"
+                boxShadow="0 0 25px rgba(72, 187, 120, 0.22)"
               >
                 <Box
                   flex={1}
@@ -710,7 +710,7 @@ export default function Dashboard() {
                     content: '""',
                     position: 'absolute',
                     top: 0, left: 0, right: 0, h: '3px',
-                    bgGradient: 'linear(to-r, cyan.400, purple.500, pink.500)',
+                    bgGradient: 'linear(to-r, green.400, green.600, green.800)',
                   }}
                 >
                   <VStack align="start" gap={4} w="full">
@@ -718,7 +718,7 @@ export default function Dashboard() {
                       <Heading size="md">Referrals</Heading>
                       <Text color="whiteAlpha.600" fontSize="sm">Invite friends to earn additional color drops.</Text>
                     </VStack>
-                    <Box p="1px" rounded="lg" bgGradient="linear(to-r, cyan.400, purple.500)" w="full">
+                    <Box p="1px" rounded="lg" bgGradient="linear(to-r, green.400, green.600)" w="full">
                       <Box px={4} py={2.5} bg="blackAlpha.700" rounded="lg" w="full">
                         <Text color="gray.500" fontSize="xs" mb={1} textTransform="uppercase" letterSpacing="widest">Your Invite Code</Text>
                         <Tooltip label={copiedReferral ? 'Copied!' : 'Click to copy'} placement="top">
@@ -742,7 +742,7 @@ export default function Dashboard() {
                           <Text color="whiteAlpha.800" fontSize="xs" fontWeight="semibold">
                             Have a friend's code?
                           </Text>
-                          <Box px={2} py={0.5} rounded="md" bg="cyan.500" color="black" fontSize="2xs" fontWeight="black">
+                          <Box px={2} py={0.5} rounded="md" bg="green.500" color="black" fontSize="2xs" fontWeight="black">
                             +15 COINS
                           </Box>
                         </HStack>
@@ -762,7 +762,7 @@ export default function Dashboard() {
                           />
                           <Button
                             size="sm"
-                            bgGradient="linear(to-r, cyan.400, purple.500)"
+                            bgGradient="linear(to-r, green.400, green.600)"
                             color="white"
                             fontWeight="bold"
                             fontSize="xs"
@@ -770,7 +770,7 @@ export default function Dashboard() {
                             rounded="lg"
                             isLoading={isClaimingRef}
                             onClick={handleDashboardClaimReferral}
-                            _hover={{ bgGradient: 'linear(to-r, cyan.300, purple.400)' }}
+                            _hover={{ bgGradient: 'linear(to-r, green.300, green.500)' }}
                           >
                             CLAIM
                           </Button>
@@ -810,8 +810,8 @@ export default function Dashboard() {
                   <Box
                     p="1.5px"
                     rounded="xl"
-                    bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
-                    boxShadow="0 0 20px rgba(159, 122, 234, 0.2)"
+                    bgGradient="linear(to-r, green.400, green.600, green.800)"
+                    boxShadow="0 0 20px rgba(72, 187, 120, 0.2)"
                   >
                     <Flex
                       align="center"
@@ -828,7 +828,7 @@ export default function Dashboard() {
                         content: '""',
                         position: 'absolute',
                         top: 0, left: 0, right: 0, h: '2px',
-                        bgGradient: 'linear(to-r, cyan.400, purple.500, pink.500)',
+                        bgGradient: 'linear(to-r, green.400, green.600, green.800)',
                       }}
                       _hover={{ bg: 'whiteAlpha.200' }}
                       transition="all 0.2s"
@@ -852,7 +852,7 @@ export default function Dashboard() {
                       <Text color="whiteAlpha.800" fontSize="xs" fontWeight="semibold">
                         Have an invite code?
                       </Text>
-                      <Box px={2} py={0.5} rounded="md" bg="cyan.500" color="black" fontSize="2xs" fontWeight="black">
+                      <Box px={2} py={0.5} rounded="md" bg="green.500" color="black" fontSize="2xs" fontWeight="black">
                         +15 COINS
                       </Box>
                     </HStack>
@@ -872,7 +872,7 @@ export default function Dashboard() {
                       />
                       <Button
                         size="sm"
-                        bgGradient="linear(to-r, cyan.400, purple.500)"
+                        bgGradient="linear(to-r, green.400, green.600)"
                         color="white"
                         fontWeight="bold"
                         fontSize="xs"
@@ -880,7 +880,7 @@ export default function Dashboard() {
                         rounded="lg"
                         isLoading={isClaimingRef}
                         onClick={handleDashboardClaimReferral}
-                        _hover={{ bgGradient: 'linear(to-r, cyan.300, purple.400)' }}
+                        _hover={{ bgGradient: 'linear(to-r, green.300, green.500)' }}
                       >
                         CLAIM
                       </Button>
@@ -917,12 +917,12 @@ export default function Dashboard() {
               fontSize={{ base: 'xl', md: '2xl' }}
               fontWeight="black"
               letterSpacing="widest"
-              bgGradient="linear(to-r, cyan.400, purple.500, pink.500)"
+              bgGradient="linear(to-r, green.400, green.600, green.800)"
               color="white"
               rounded="2xl"
-              boxShadow="0 0 35px rgba(159, 122, 234, 0.45)"
+              boxShadow="0 0 35px rgba(72, 187, 120, 0.45)"
               _hover={{
-                bgGradient: 'linear(to-r, cyan.300, purple.400, pink.400)',
+                bgGradient: 'linear(to-r, green.300, green.500, green.700)',
                 transform: 'translateY(-3px)',
                 boxShadow: '0 16px 36px rgba(236, 72, 153, 0.5)',
               }}
@@ -956,31 +956,31 @@ export default function Dashboard() {
       {/* --- About Modal --- */}
       <Modal isOpen={activeModal === 'about'} onClose={() => setActiveModal(null)} size="xl" isCentered scrollBehavior="inside">
         <ModalOverlay backdropFilter="blur(10px)" bg="blackAlpha.800" />
-        <ModalContent bg="gray.900" border="1px solid" borderColor="purple.500" borderRadius="2xl" p={4} maxH="80vh" boxShadow="0 0 30px rgba(159, 122, 234, 0.4)">
+        <ModalContent bg="gray.900" border="1px solid" borderColor="green.600" borderRadius="2xl" p={4} maxH="80vh" boxShadow="0 0 30px rgba(72, 187, 120, 0.4)">
           <ModalCloseButton color="gray.400" />
           <ModalBody pb={6}>
             <VStack gap={8} align="start" pt={4}>
-              <Heading size="md" color="white" fontWeight="bold" letterSpacing="widest" textTransform="uppercase" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">
+              <Heading size="md" color="white" fontWeight="bold" letterSpacing="widest" textTransform="uppercase" bgGradient="linear(to-r, green.400, green.600)" bgClip="text">
                 About — The Crypto Bro
               </Heading>
 
               <VStack align="start" gap={2}>
-                <Text color="cyan.300" fontSize="xs" fontWeight="bold" textTransform="uppercase">Origin</Text>
+                <Text color="green.300" fontSize="xs" fontWeight="bold" textTransform="uppercase">Origin</Text>
                 <Text color="whiteAlpha.800" fontSize="sm" lineHeight="tall">He remembers when the charts used to be interesting. Now it&apos;s just grey lines on a grey screen, in a room he hasn&apos;t left in a while. Rugged twice. Liquidated once, badly. The losses stopped feeling like losses and started feeling like weather. His world went flat around the same time his portfolio did.</Text>
               </VStack>
 
               <VStack align="start" gap={2}>
-                <Text color="pink.400" fontSize="xs" fontWeight="bold" textTransform="uppercase">The Machine</Text>
+                <Text color="green.600" fontSize="xs" fontWeight="bold" textTransform="uppercase">The Machine</Text>
                 <Text color="whiteAlpha.800" fontSize="sm" lineHeight="tall">There&apos;s a machine he keeps coming back to. A claw, a pile of capsules, no promise except a pull. He pulls anyway. Most of the time, nothing. The grey holds.</Text>
               </VStack>
 
               <VStack align="start" gap={2}>
-                <Text color="purple.400" fontSize="xs" fontWeight="bold" textTransform="uppercase">The Pull</Text>
+                <Text color="green.500" fontSize="xs" fontWeight="bold" textTransform="uppercase">The Pull</Text>
                 <Text color="whiteAlpha.800" fontSize="sm" lineHeight="tall">Then one hits. The colour doesn&apos;t ease in, it floods. He&apos;d forgotten anything could be this loud. For the first time in longer than he can count, the world isn&apos;t grey.</Text>
               </VStack>
 
               <VStack align="start" gap={2}>
-                <Text color="cyan.300" fontSize="xs" fontWeight="bold" textTransform="uppercase">The Comeback</Text>
+                <Text color="green.300" fontSize="xs" fontWeight="bold" textTransform="uppercase">The Comeback</Text>
                 <Text color="whiteAlpha.800" fontSize="sm" lineHeight="tall">One pull doesn&apos;t undo two rugs and a liquidation. But he pulls again. Not chasing the number anymore. Chasing the feeling of the grey breaking, one capsule at a time.</Text>
               </VStack>
 
@@ -990,12 +990,12 @@ export default function Dashboard() {
                 <Text color="white" fontSize="xs" fontWeight="bold" textTransform="uppercase">Colour Machine</Text>
                 <Text color="whiteAlpha.800" fontSize="sm" lineHeight="tall">Colour has to be earned. Complete tasks, refer friends, fill your coin balance. Use it to operate the claw.</Text>
                 <Flex gap={4} w="full" mt={2} direction={{ base: 'column', md: 'row' }}>
-                  <Box flex={1} p={4} bg="whiteAlpha.100" borderRadius="xl" border="1px solid" borderColor="cyan.400">
-                    <Text color="cyan.300" fontWeight="bold" fontSize="sm" mb={1}>GUARANTEED</Text>
+                  <Box flex={1} p={4} bg="whiteAlpha.100" borderRadius="xl" border="1px solid" borderColor="green.400">
+                    <Text color="green.300" fontWeight="bold" fontSize="sm" mb={1}>GUARANTEED</Text>
                     <Text color="whiteAlpha.700" fontSize="xs">your spot is locked, no matter what.</Text>
                   </Box>
-                  <Box flex={1} p={4} bg="whiteAlpha.100" borderRadius="xl" border="1px solid" borderColor="pink.400">
-                    <Text color="pink.400" fontWeight="bold" fontSize="sm" mb={1}>FIRST COME FIRST SERVED</Text>
+                  <Box flex={1} p={4} bg="whiteAlpha.100" borderRadius="xl" border="1px solid" borderColor="green.600">
+                    <Text color="green.600" fontWeight="bold" fontSize="sm" mb={1}>FIRST COME FIRST SERVED</Text>
                     <Text color="whiteAlpha.700" fontSize="xs">colour&apos;s real, but it&apos;s racing the clock.</Text>
                   </Box>
                 </Flex>

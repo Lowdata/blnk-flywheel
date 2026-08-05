@@ -187,7 +187,7 @@ export default function OnboardingModal({
                 borderRadius="lg"
                 textAlign="center"
               >
-                <Text fontWeight="medium" fontSize="3xs" color={user ? 'green.400' : 'whiteAlpha.800'}>
+                <Text fontWeight="medium" fontSize="3xs" color={user ? '#CCFF00' : 'whiteAlpha.800'}>
                   1. WALLET {user ? '✓' : 'REQUIRED'}
                 </Text>
               </Box>
@@ -204,7 +204,7 @@ export default function OnboardingModal({
                 <Text
                   fontWeight="medium"
                   fontSize="3xs"
-                  color={user?.twitterLinked ? 'green.400' : 'whiteAlpha.400'}
+                  color={user?.twitterLinked ? '#CCFF00' : 'whiteAlpha.400'}
                 >
                   2. TWITTER {user?.twitterLinked ? '✓' : ''}
                 </Text>
@@ -222,7 +222,7 @@ export default function OnboardingModal({
                 <Text
                   fontWeight="medium"
                   fontSize="3xs"
-                  color={user?.referredBy ? 'green.400' : 'whiteAlpha.400'}
+                  color={user?.referredBy ? '#CCFF00' : 'whiteAlpha.400'}
                 >
                   3. INVITE {user?.referredBy ? '✓' : ''}
                 </Text>
@@ -282,13 +282,13 @@ export default function OnboardingModal({
 
                 <Button
                   w="full"
-                  bg="green.400"
+                  bg="#CCFF00"
                   color="black"
                   fontWeight="bold"
                   fontSize="xs"
                   py={6}
                   rounded="xl"
-                  _hover={{ bg: 'green.300', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
+                  _hover={{ bg: '#CCFF00', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
                   onClick={onConnectWallet}
                 >
                   CONNECT WALLET
@@ -336,13 +336,13 @@ export default function OnboardingModal({
                   />
                   <Button
                     w="full"
-                    bg="green.400"
+                    bg="#CCFF00"
                     color="black"
                     fontWeight="bold"
                     fontSize="xs"
                     py={6}
                     rounded="xl"
-                    _hover={{ bg: 'green.300', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
+                    _hover={{ bg: '#CCFF00', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
                     onClick={async () => {
                       if (!twitterUsername.trim()) {
                         toast({ title: 'Please enter your Twitter username', status: 'warning' });
@@ -402,13 +402,13 @@ export default function OnboardingModal({
                     />
                     <Button
                       w="full"
-                      bg="green.400"
+                      bg="#CCFF00"
                       color="black"
                       fontWeight="bold"
                       fontSize="xs"
                       py={6}
                       rounded="xl"
-                      _hover={{ bg: 'green.300', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
+                      _hover={{ bg: '#CCFF00', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
                       onClick={handleClaimReferral}
                       isLoading={isClaiming}
                     >
@@ -417,18 +417,18 @@ export default function OnboardingModal({
                   </VStack>
                 ) : (
                   <VStack gap={3} align="center">
-                    <Text fontWeight="medium" fontSize="xs" color="green.400">
+                    <Text fontWeight="medium" fontSize="xs" color="#CCFF00">
                       ✓ REFERRAL APPLIED ({user.referredBy})
                     </Text>
                     <Button
                       w="full"
-                      bg="green.400"
+                      bg="#CCFF00"
                       color="black"
                       fontWeight="bold"
                       fontSize="xs"
                       py={6}
                       rounded="xl"
-                      _hover={{ bg: 'green.300', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
+                      _hover={{ bg: '#CCFF00', transform: 'translateY(-1px)', boxShadow: '0 0 15px rgba(72,187,120,0.4)' }}
                       onClick={onClose}
                     >
                       ENTER THE CLAW MACHINE →

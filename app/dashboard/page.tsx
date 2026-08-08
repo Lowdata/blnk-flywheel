@@ -8,6 +8,7 @@ import {
   Tooltip,
 } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import OnboardingModal from '@/components/OnboardingModal';
 import { soundManager } from '@/lib/sound';
 
@@ -378,16 +379,21 @@ export default function Dashboard() {
         borderColor="whiteAlpha.100"
       >
         {/* Logo */}
-        <Text
-          fontWeight="black"
-          fontSize="xl"
-          letterSpacing="0.25em"
-          textTransform="uppercase"
-          bgGradient="linear(to-r, #CCFF00, green.600, green.800)"
-          bgClip="text"
-        >
-          BLNK
-        </Text>
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <Text
+            fontWeight="black"
+            fontSize="xl"
+            letterSpacing="0.25em"
+            textTransform="uppercase"
+            bgGradient="linear(to-r, #CCFF00, green.600, green.800)"
+            bgClip="text"
+            cursor="pointer"
+            _hover={{ opacity: 0.85 }}
+            transition="opacity 0.2s"
+          >
+            BLNK
+          </Text>
+        </Link>
 
         {/* Right Navigation Menu */}
         <Flex align="center" gap={{ base: 1.5, md: 3 }}>

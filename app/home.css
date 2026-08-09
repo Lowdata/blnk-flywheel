@@ -242,17 +242,23 @@
     font-family:var(--font-pixel); font-size:9px; color:var(--paper);
     display:flex; flex-direction:column; align-items:center; gap:8px;
     opacity:.85;
+    animation: bounce-scroll 2s ease-in-out infinite;
+  }
+  @keyframes bounce-scroll {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(10px); }
   }
   .scroll-cue .bar{
-    width:1px; height:38px; background:var(--paper);
-    position:relative; overflow:hidden;
+    width:1px; height:38px; background:var(--lime);
+    transform-origin: top;
+    animation: scroll-line-reveal 2s cubic-bezier(0.77, 0, 0.175, 1) infinite;
   }
-  .scroll-cue .bar::after{
-    content:''; position:absolute; left:0; top:-100%; width:100%; height:100%;
-    background:var(--lime);
-    animation:drip 1.8s ease-in-out infinite;
+  @keyframes scroll-line-reveal {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    50.1% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
   }
-  @keyframes drip{ 0%{top:-100%;} 100%{top:100%;} }
 
   /* ---------- THE WORLD ---------- */
   .world{

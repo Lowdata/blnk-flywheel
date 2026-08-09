@@ -92,7 +92,7 @@ export default function Home() {
   <div className="hero-colour"></div>
 
   <div className="hero-content">
-    <span className="hero-eyebrow">black to ink.</span>
+
     <h1 className="hero-title">Blank to ink.</h1>
     <p className="hero-sub">A digital IP of colour and feelings. The world stays grey until you fill it.</p>
     <a className="hero-badge" href="https://x.com/RobinhoodCrypto" target="_blank" rel="noopener">

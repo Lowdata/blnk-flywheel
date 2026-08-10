@@ -39,8 +39,8 @@ const silkscreen = Silkscreen({
 });
 
 export const metadata = {
-  title: 'BLNK Claw Machine',
-  description: 'The Whitelist Flywheel',
+  title: 'BLNK',
+  description: 'Black to ink',
   icons: {
     icon: '/favicon.svg',
   },

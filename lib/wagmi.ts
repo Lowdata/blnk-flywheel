@@ -29,7 +29,7 @@ const connectors = connectorsForWallets(
     },
   ],
   {
-    appName: 'BLNK Claw Machine',
+    appName: 'BLNK',
     projectId: WALLETCONNECT_PROJECT_ID,
   }
 );

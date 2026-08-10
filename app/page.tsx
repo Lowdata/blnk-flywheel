@@ -81,9 +81,9 @@ export default function Home() {
     </div>
 
     {/* CTA */}
-    <Link className="dash-nav__cta" href="/dashboard">
-      Play the Game →
-    </Link>
+    <div className="dash-nav__cta" style={{ cursor: 'not-allowed', opacity: 0.5 }}>
+      Game Coming Soon
+    </div>
   </div>
 </nav>
 
@@ -98,9 +98,9 @@ export default function Home() {
     <a className="hero-badge" href="https://x.com/RobinhoodCrypto" target="_blank" rel="noopener">
       <span className="dot"></span> Building on Robinhood
     </a>
-    <Link className="wl-badge" href="/dashboard">
-      Ride to the Colour Machine &rarr;
-    </Link>
+    <div className="wl-badge" style={{ cursor: 'not-allowed', opacity: 0.5 }}>
+      Ride to the Colour Machine (Soon)
+    </div>
   </div>
 
   <div className="scroll-cue"><span>SCROLL</span><span className="bar"></span></div>

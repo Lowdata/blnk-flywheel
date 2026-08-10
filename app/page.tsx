@@ -82,7 +82,7 @@ export default function Home() {
 
     {/* CTA */}
     <div className="dash-nav__cta" style={{ cursor: 'not-allowed', opacity: 0.5 }}>
-      Game Coming Soon
+      WL Coming soon
     </div>
   </div>
 </nav>

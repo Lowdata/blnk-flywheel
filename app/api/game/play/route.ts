@@ -53,18 +53,38 @@ export async function POST(request: Request) {
         }
 
         // ── Server-side RNG (crypto — never Math.random) ──────────────────
-        // Odds: GTD 15%, FCFS 35%, LOSS 50%
+        // Odds: GTD 10%, FCFS 30%, LOSS 60%
         const rand = secureRandom();
         let outcome: 'GTD' | 'FCFS' | 'LOSS' = 'LOSS';
-        if (rand < 0.15) {
+        if (rand < 0.10) {
             outcome = 'GTD';
-        } else if (rand < 0.50) {
+        } else if (rand < 0.40) {
             outcome = 'FCFS';
         }
 
-        // -- Single atomic update: Coin deduction + Reward creation --------
+        // ── Block GTD on first 2 spins ────────────────────────────────────
+        // totalPlays is 0-indexed at this point (before this play is recorded).
+        // So plays 0 and 1 (i.e. the 1st and 2nd spin) cannot yield GTD.
+        const playsBeforeThis = user.totalPlays ?? 0;
+        if (outcome === 'GTD' && playsBeforeThis < 2) {
+            // Downgrade to FCFS or LOSS based on a re-roll among remaining odds
+            // Remaining pool after removing GTD: FCFS 30%, LOSS 60% → 33%/67%
+            outcome = secureRandom() < 0.333 ? 'FCFS' : 'LOSS';
+        }
+
+        // ── Cap: user may only hold 1 unclaimed reward per type ───────────
+        if (outcome !== 'LOSS') {
+            const unclaimedCount = (user.rewards ?? []).filter(
+                (r: any) => r.type === outcome && r.claimed === false
+            ).length;
+            if (unclaimedCount >= 1) {
+                outcome = 'LOSS';
+            }
+        }
+
+        // -- Single atomic update: Coin deduction + Reward creation + play count
         const updateOp: any = {
-            $inc: { coins: -COINS_PER_PLAY }
+            $inc: { coins: -COINS_PER_PLAY, totalPlays: 1 }
         };
         if (outcome !== 'LOSS') {
             updateOp.$push = {

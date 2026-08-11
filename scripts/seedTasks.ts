@@ -46,9 +46,16 @@ const TASKS_TO_SEED = [
     type: 'twitter_follow',
   },
   {
+    taskId: 'twitter_like',
+    description: 'Like our announcement tweet',
+    rewardAmount: 10,
+    taskUrl: 'https://twitter.com/intent/like?tweet_id=2086799765480902827',
+    type: 'twitter_like',
+  },
+  {
     taskId: 'twitter_rt',
-    description: 'Like & RT our announcement tweet',
-    rewardAmount: 20,
+    description: 'RT our announcement tweet',
+    rewardAmount: 10,
     taskUrl: 'https://twitter.com/intent/retweet?tweet_id=2086799765480902827',
     type: 'twitter_rt',
   },
@@ -72,15 +79,15 @@ async function seed() {
   try {
     console.log('Connecting to MongoDB...');
     await mongoose.connect(MONGODB_URI!);
-    console.log('Connected. Seeding tasks collection...');
+    console.log('Connected. Truncating tasks collection...');
+    await Task.deleteMany({});
+    console.log('Truncated. Seeding tasks collection in order...');
 
-    for (const t of TASKS_TO_SEED) {
-      await Task.findOneAndUpdate(
-        { taskId: t.taskId },
-        { $set: t },
-        { upsert: true, new: true }
-      );
-      console.log(`✓ Upserted task: ${t.taskId}`);
+    for (let i = 0; i < TASKS_TO_SEED.length; i++) {
+      const t = TASKS_TO_SEED[i];
+      const date = new Date(Date.now() + i * 1000); // space out by 1 second to guarantee sort order
+      await Task.create({ ...t, createdAt: date, updatedAt: date });
+      console.log(`✓ Created task: ${t.taskId}`);
     }
 
     console.log('All tasks seeded successfully into MongoDB collection.');

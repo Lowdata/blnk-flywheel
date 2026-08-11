@@ -270,14 +270,23 @@ export default function Dashboard() {
 
     if (task.type === 'referral' && isCompleted) {
       soundManager.playClick();
-      if (task.taskUrl) window.open(task.taskUrl, '_blank');
+      let finalUrl = task.taskUrl;
+      if (finalUrl && finalUrl.includes('%5BCODE%5D') && user?.referralCode) {
+        finalUrl = finalUrl.replace('%5BCODE%5D', user.referralCode);
+      }
+      if (finalUrl) window.open(finalUrl, '_blank');
       toast({ title: 'Referral link opened!', description: 'Share with friends.', status: 'info', duration: 3000 });
       return;
     }
 
     if (isCompleted || verifyingTasks[task.taskId]) return;
     soundManager.playClick();
-    if (task.taskUrl) window.open(task.taskUrl, '_blank');
+    
+    let finalUrl = task.taskUrl;
+    if (finalUrl && finalUrl.includes('%5BCODE%5D') && user?.referralCode) {
+      finalUrl = finalUrl.replace('%5BCODE%5D', user.referralCode);
+    }
+    if (finalUrl) window.open(finalUrl, '_blank');
 
     let secondsLeft = 5;
     setVerifyingTasks((prev) => ({ ...prev, [task.taskId]: secondsLeft }));
@@ -343,21 +352,6 @@ export default function Dashboard() {
       </Box>
     );
   }
-
-  // EARLY RETURN FOR COMING SOON
-  return (
-    <Box minH="100vh" bg="gray.900" color="white" display="flex" alignItems="center" justifyContent="center" flexDirection="column">
-      <VStack gap={4}>
-        <Heading size="2xl" bgGradient="linear(to-r, #CCFF00, green.600)" bgClip="text">BLNK</Heading>
-        <Text fontSize="xl">Game and Dashboard Coming Soon</Text>
-        <Link href="/">
-          <Button mt={4} rounded="full" bgGradient="linear(to-r, #CCFF00, green.600)" color="black" _hover={{ opacity: 0.8 }}>
-            Return Home
-          </Button>
-        </Link>
-      </VStack>
-    </Box>
-  );
 
   const displayAddress = address || user?.walletAddress;
 

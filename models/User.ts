@@ -13,6 +13,7 @@ export interface IUser extends Document {
   walletAddress: string;
   nonce: string;
   coins: number;
+  totalPlays: number;
   referralCode: string;
   referredBy?: string;
   referrals: mongoose.Types.ObjectId[];
@@ -39,6 +40,7 @@ const UserSchema: Schema = new Schema(
     walletAddress: { type: String, required: true, unique: true },
     nonce: { type: String, required: true },
     coins: { type: Number, default: 0 },
+    totalPlays: { type: Number, default: 0 },
     referralCode: {
       type: String,
       unique: true,

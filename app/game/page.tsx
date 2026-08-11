@@ -304,15 +304,15 @@ export default function GamePage() {
         const outcome = outcomeCard?.outcome ?? '';
         const text = encodeURIComponent(
             outcome === 'GTD'
-                ? `one crack. and the grey doesn't hold anymore. colour doesn't ease in, it floods. @BlnkINC`
-                : `not every pull hits. but the one that does breaks the grey wide open. pull, and find out. @BlnkINC`
+                ? `one crack. and the grey doesn't hold anymore. colour doesn't ease in, it floods. I just won a Guaranteed Whitelist spot at the @BlnkINC Arcade! 🕹️👾`
+                : `not every pull hits. but the one that does breaks the grey wide open. I just won a FCFS Whitelist spot at the @BlnkINC Arcade! 🕹️👾`
         );
         window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
     }, [outcomeCard]);
 
     const shareLossOnX = useCallback(() => {
         const text = encodeURIComponent(
-            `not every pull hits. most don't. but the one that does breaks the grey wide open. pull, and find out.`
+            `not every pull hits. most don't. but the one that does breaks the grey wide open. pull, and find out. @BlnkINC`
         );
         window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
     }, []);
@@ -734,7 +734,7 @@ export default function GamePage() {
                                         onClick={() => {
                                             const origin = typeof window !== 'undefined' ? window.location.origin : 'https://blnk-flywheel.vercel.app';
                                             const refUrl = `${origin}/?ref=${user?.referralCode || ''}`;
-                                            const tweetText = encodeURIComponent("I'm playing the @blnk_fi flywheel claw machine! 🕹️ Try your luck, grab exclusive drops, and join BLNK using my referral link:");
+                                            const tweetText = encodeURIComponent("I'm playing the @BlnkINC flywheel claw machine! 🕹️ Try your luck, grab exclusive drops, and join BLNK using my referral link:");
                                             const intentUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(refUrl)}`;
                                             window.open(intentUrl, '_blank');
                                         }}

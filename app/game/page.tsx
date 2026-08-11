@@ -747,7 +747,7 @@ export default function GamePage() {
                                             textTransform: 'uppercase',
                                         }}
                                     >
-                                        INVITE A FRIEND (+30 COINS)
+                                        INVITE A FRIEND (+2 COINS)
                                     </button>
                                     <button
                                         onClick={() => {

@@ -53,12 +53,12 @@ export async function POST(request: Request) {
         }
 
         // ── Server-side RNG (crypto — never Math.random) ──────────────────
-        // Odds: GTD 5%, FCFS 30%, LOSS 65%
+        // Odds: GTD 15%, FCFS 35%, LOSS 50%
         const rand = secureRandom();
         let outcome: 'GTD' | 'FCFS' | 'LOSS' = 'LOSS';
-        if (rand < 0.05) {
+        if (rand < 0.15) {
             outcome = 'GTD';
-        } else if (rand < 0.35) {
+        } else if (rand < 0.50) {
             outcome = 'FCFS';
         }
 

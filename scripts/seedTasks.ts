@@ -49,7 +49,7 @@ const TASKS_TO_SEED = [
     taskId: 'twitter_rt',
     description: 'Like & RT our announcement tweet',
     rewardAmount: 20,
-    taskUrl: 'https://twitter.com/intent/retweet?tweet_id=1800000000000000000',
+    taskUrl: 'https://twitter.com/intent/retweet?tweet_id=2086799765480902827',
     type: 'twitter_rt',
   },
   {
@@ -63,7 +63,7 @@ const TASKS_TO_SEED = [
     taskId: 'referral_share',
     description: 'Refer friends to earn coins',
     rewardAmount: 30,
-    taskUrl: 'https://twitter.com/intent/tweet?text=Join%20me%20at%20the%20%40BlnkINC%20Arcade%21%20Use%20my%20code%20to%20get%20%2B15%20COINS%20%F0%9F%95%B9%EF%B8%8F%F0%9F%91%BE',
+    taskUrl: 'https://twitter.com/intent/tweet?text=Join%20me%20at%20the%20%40BlnkINC%20Arcade%21%20Use%20my%20code%20%5BCODE%5D%20to%20get%20%2B15%20COINS%20%F0%9F%95%B9%EF%B8%8F%F0%9F%91%BE',
     type: 'referral',
   },
 ];

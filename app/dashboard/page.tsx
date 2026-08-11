@@ -270,14 +270,23 @@ export default function Dashboard() {
 
     if (task.type === 'referral' && isCompleted) {
       soundManager.playClick();
-      if (task.taskUrl) window.open(task.taskUrl, '_blank');
+      let finalUrl = task.taskUrl;
+      if (finalUrl && finalUrl.includes('%5BCODE%5D') && user?.referralCode) {
+        finalUrl = finalUrl.replace('%5BCODE%5D', user.referralCode);
+      }
+      if (finalUrl) window.open(finalUrl, '_blank');
       toast({ title: 'Referral link opened!', description: 'Share with friends.', status: 'info', duration: 3000 });
       return;
     }
 
     if (isCompleted || verifyingTasks[task.taskId]) return;
     soundManager.playClick();
-    if (task.taskUrl) window.open(task.taskUrl, '_blank');
+    
+    let finalUrl = task.taskUrl;
+    if (finalUrl && finalUrl.includes('%5BCODE%5D') && user?.referralCode) {
+      finalUrl = finalUrl.replace('%5BCODE%5D', user.referralCode);
+    }
+    if (finalUrl) window.open(finalUrl, '_blank');
 
     let secondsLeft = 5;
     setVerifyingTasks((prev) => ({ ...prev, [task.taskId]: secondsLeft }));

@@ -304,8 +304,8 @@ export default function GamePage() {
         const outcome = outcomeCard?.outcome ?? '';
         const text = encodeURIComponent(
             outcome === 'GTD'
-                ? `one crack. and the grey doesn't hold anymore. colour doesn't ease in, it floods.`
-                : `not every pull hits. but the one that does breaks the grey wide open. pull, and find out.`
+                ? `one crack. and the grey doesn't hold anymore. colour doesn't ease in, it floods. @BlnkINC`
+                : `not every pull hits. but the one that does breaks the grey wide open. pull, and find out. @BlnkINC`
         );
         window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
     }, [outcomeCard]);

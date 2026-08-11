@@ -29,10 +29,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: 'Twitter already linked' }, { status: 400 });
     }
 
-    // Link Twitter and grant 10 coins
+    // Link Twitter and grant 1 coin
     user.twitterHandle = handle.startsWith('@') ? handle : `@${handle}`;
     user.twitterLinked = true;
-    user.coins += 10;
+    user.coins += 1;
     
     await user.save();
 

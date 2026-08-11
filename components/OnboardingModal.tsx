@@ -315,7 +315,7 @@ export default function OnboardingModal({
                     LINK X (TWITTER)
                   </Text>
                   <Text color="whiteAlpha.600" fontSize="xs">
-                    Connect your X account to claim your +10 COINS bonus.
+                    Connect your X account to claim your +1 COIN bonus.
                   </Text>
                 </VStack>
 

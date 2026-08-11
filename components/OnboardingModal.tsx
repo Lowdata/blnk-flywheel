@@ -102,7 +102,7 @@ export default function OnboardingModal({
         if (typeof window !== 'undefined') localStorage.removeItem('blnk_ref_code');
         toast({
           title: 'Referral Code Applied!',
-          description: data.message || 'You earned +15 COINS welcome bonus.',
+          description: data.message || 'You earned +2 COINS welcome bonus.',
           status: 'success',
           duration: 4000,
         });
@@ -354,7 +354,7 @@ export default function OnboardingModal({
                       }
                     }}
                   >
-                    LINK X (+10 COINS)
+                    LINK X (+1 COIN)
                   </Button>
                 </VStack>
               </VStack>
@@ -379,7 +379,7 @@ export default function OnboardingModal({
                     REFERRAL CODE
                   </Text>
                   <Text color="whiteAlpha.600" fontSize="xs">
-                    Got a referral code? Enter it below for a +15 COINS bonus.
+                    Got a referral code? Enter it below for a +2 COINS bonus.
                   </Text>
                 </VStack>
 
@@ -412,7 +412,7 @@ export default function OnboardingModal({
                       onClick={handleClaimReferral}
                       isLoading={isClaiming}
                     >
-                      {referralInput.trim() ? 'CLAIM & PLAY (+15 COINS)' : 'SKIP & PLAY'}
+                      {referralInput.trim() ? 'CLAIM & PLAY (+2 COINS)' : 'SKIP & PLAY'}
                     </Button>
                   </VStack>
                 ) : (

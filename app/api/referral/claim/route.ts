@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       { _id: currentUser._id, referredBy: { $exists: false } },
       { 
         $set: { referredBy: cleanCode },
-        $inc: { coins: 1 }
+        $inc: { coins: 2 }
       },
       { new: true }
     );
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      message: 'Referral code applied! You earned +1 COIN welcome bonus.',
+      message: 'Referral code applied! You earned +2 COINS welcome bonus.',
       coins: updatedUser.coins,
     });
   } catch (error: any) {

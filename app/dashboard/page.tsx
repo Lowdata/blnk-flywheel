@@ -190,7 +190,7 @@ export default function Dashboard() {
       if (res.ok) {
         toast({
           title: 'Referral Code Applied!',
-          description: data.message || 'You earned +1 COIN welcome bonus.',
+          description: data.message || 'You earned +2 COINS welcome bonus.',
           status: 'success',
           duration: 4000,
         });
@@ -758,7 +758,7 @@ export default function Dashboard() {
                             Have a friend's code?
                           </Text>
                           <Box px={2} py={0.5} rounded="md" bg="#99CC00" color="black" fontSize="2xs" fontWeight="black">
-                            +1 COIN
+                            +2 COINS
                           </Box>
                         </HStack>
                         <HStack gap={2}>
@@ -868,7 +868,7 @@ export default function Dashboard() {
                         Have an invite code?
                       </Text>
                       <Box px={2} py={0.5} rounded="md" bg="#99CC00" color="black" fontSize="2xs" fontWeight="black">
-                        +1 COIN
+                        +2 COINS
                       </Box>
                     </HStack>
                     <HStack gap={2}>

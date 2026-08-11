@@ -344,21 +344,6 @@ export default function Dashboard() {
     );
   }
 
-  // EARLY RETURN FOR COMING SOON
-  return (
-    <Box minH="100vh" bg="gray.900" color="white" display="flex" alignItems="center" justifyContent="center" flexDirection="column">
-      <VStack gap={4}>
-        <Heading size="2xl" bgGradient="linear(to-r, #CCFF00, green.600)" bgClip="text">BLNK</Heading>
-        <Text fontSize="xl">Game and Dashboard Coming Soon</Text>
-        <Link href="/">
-          <Button mt={4} rounded="full" bgGradient="linear(to-r, #CCFF00, green.600)" color="black" _hover={{ opacity: 0.8 }}>
-            Return Home
-          </Button>
-        </Link>
-      </VStack>
-    </Box>
-  );
-
   const displayAddress = address || user?.walletAddress;
 
   return (

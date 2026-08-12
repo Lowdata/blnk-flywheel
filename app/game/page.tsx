@@ -215,7 +215,7 @@ export default function GamePage() {
     const handlePlay = useCallback(async () => {
         if (phase !== 'intro' || !user) return;
         if ((user?.coins ?? 0) < 3) {
-            router.push('/');
+            router.push('/dashboard');
             return;
         }
         soundManager.playClick();
@@ -752,7 +752,7 @@ export default function GamePage() {
                                     <button
                                         onClick={() => {
                                             if ((user?.coins ?? 0) < 3) {
-                                                router.push('/');
+                                                router.push('/dashboard');
                                             } else {
                                                 handleClose();
                                             }

@@ -53,12 +53,12 @@ export async function POST(request: Request) {
         }
 
         // ── Server-side RNG (crypto — never Math.random) ──────────────────
-        // Odds: GTD 2%, FCFS 10%, LOSS 88%
+        // Odds: GTD 0.5%, FCFS 2%, LOSS 97.5%
         const rand = secureRandom();
         let outcome: 'GTD' | 'FCFS' | 'LOSS' = 'LOSS';
-        if (rand < 0.02) {
+        if (rand < 0.005) {
             outcome = 'GTD';
-        } else if (rand < 0.12) {
+        } else if (rand < 0.025) {
             outcome = 'FCFS';
         }
 
@@ -67,9 +67,9 @@ export async function POST(request: Request) {
         // So plays 0 and 1 (i.e. the 1st and 2nd spin) cannot yield GTD.
         const playsBeforeThis = user.totalPlays ?? 0;
         if (outcome === 'GTD' && playsBeforeThis < 2) {
-            // Downgrade to FCFS or LOSS based on a re-roll among remaining odds
-            // Remaining pool after removing GTD: FCFS 10%, LOSS 88% → 10.2%/89.8%
-            outcome = secureRandom() < 0.102 ? 'FCFS' : 'LOSS';
+            // Downgrade to FCFS or LOSS based on a re-roll among remaining odds.
+            // After removing GTD (0.5%) from pool: FCFS 2% / 99.5% remaining = ~2.01%
+            outcome = secureRandom() < 0.0201 ? 'FCFS' : 'LOSS';
         }
 
         // ── Cap: user may only hold 1 unclaimed reward per type ───────────

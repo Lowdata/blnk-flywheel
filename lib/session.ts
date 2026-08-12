@@ -2,7 +2,9 @@ import { SessionOptions } from 'iron-session';
 
 export interface SessionData {
   nonce?: string;
-  nonceIssuedAt?: number; // Unix timestamp (ms) for rate limiting
+  nonceIssuedAt?: number;       // Unix timestamp (ms) for nonce rate limiting
+  lastMeAt?: number;            // Unix timestamp (ms) for /api/auth/me rate limiting
+  lastTaskCompleteAt?: number;  // Unix timestamp (ms) for /api/tasks/complete rate limiting
   siwe?: {
     address: string;
     chainId: number;

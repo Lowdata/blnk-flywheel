@@ -5,6 +5,7 @@ import dbConnect from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { getGameWindow } from '@/lib/gameWindow';
 
 const COINS_PER_PLAY = 3;
 
@@ -21,11 +22,22 @@ function secureRandom(): number {
 
 export async function POST(request: Request) {
     try {
+        // -- Game window gate (no I/O — pure env var computation) ---------------
+        // Must be the FIRST check: cheapest possible rejection for invalid timing.
+        const { isOpen, end: windowEnd } = getGameWindow();
+        if (!isOpen) {
+            return NextResponse.json(
+                { ok: false, message: 'The game window is currently closed.', windowClosed: true },
+                { status: 403 }
+            );
+        }
+
         const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
 
         if (!session.siwe) {
             return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 });
         }
+
 
         const walletAddress: string = session.siwe.address;
 

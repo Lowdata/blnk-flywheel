@@ -32,6 +32,16 @@ export default function Dashboard() {
   const didLogout = useRef(false);
   const onboardingDismissed = useRef(false);
 
+  // --- Game window state ---
+  const [gameWindow, setGameWindow] = useState<{
+    isOpen: boolean;
+    start: string | null;
+    end: string | null;
+    msUntilOpen: number | null;
+    msRemaining: number | null;
+  } | null>(null);
+  const [showFomoModal, setShowFomoModal] = useState(false);
+
   const toast = useToast();
   const router = useRouter();
 
@@ -158,10 +168,35 @@ export default function Dashboard() {
     }
   };
 
+  const fetchGameWindow = useCallback(async () => {
+    try {
+      const res = await fetch('/api/game/window');
+      if (res.ok) setGameWindow(await res.json());
+    } catch { /* non-critical — UI degrades gracefully */ }
+  }, []);
+
   useEffect(() => {
     fetchUser();
     fetchTasks();
+    fetchGameWindow();
   }, [user?._id]);
+
+  // Refresh window state every 60s (CDN caches for 30s so this is lightweight)
+  useEffect(() => {
+    const id = setInterval(fetchGameWindow, 60_000);
+    return () => clearInterval(id);
+  }, [fetchGameWindow]);
+
+  useEffect(() => {
+    if (!gameWindow || gameWindow.isOpen) {
+      setShowFomoModal(false);
+      return;
+    }
+    const id = setInterval(() => {
+      setShowFomoModal(true);
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [gameWindow]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -664,38 +699,76 @@ export default function Dashboard() {
                     <Text fontSize="xs" color="whiteAlpha.500">Complete to earn coins</Text>
                   </HStack>
 
-                  <VStack align="stretch" gap={2}>
-                    {tasks.map((task: any) => {
-                      const isCompleted = user?.completedTasks?.some(
-                        (ct: any) =>
-                          (ct._id || ct).toString() === (task._id || '').toString() || ct.taskId === task.taskId
-                      );
-                      const isVerifying = verifyingTasks[task.taskId];
-                      return (
-                        <Flex key={task.taskId} justify="space-between" align="center" p={2.5} bg="blackAlpha.400" borderRadius="lg">
-                          <Text fontSize="sm" color="whiteAlpha.900" fontWeight="medium">{task.description}</Text>
-                          <Button
-                            size="sm"
-                            bgGradient={!isCompleted ? 'linear(to-r, #CCFF00, green.600)' : undefined}
-                            bg={isCompleted ? 'whiteAlpha.200' : undefined}
-                            color={isCompleted ? 'whiteAlpha.500' : 'white'}
-                            fontWeight="bold"
-                            rounded="md"
-                            h={7}
-                            fontSize="xs"
-                            flexShrink={0}
-                            ml={2}
-                            isLoading={!!isVerifying}
-                            isDisabled={isCompleted}
-                            onClick={() => handleTaskClick(task)}
-                            _hover={!isCompleted ? { bgGradient: 'linear(to-r, #CCFF00, #99CC00)' } : {}}
-                          >
-                            {isCompleted ? 'Done' : `+${task.rewardAmount}`}
-                          </Button>
-                        </Flex>
-                      );
-                    })}
-                  </VStack>
+                  {/* Scrollable task list — max height prevents layout blow-out with many tasks */}
+                  <Box position="relative">
+                    <VStack
+                      align="stretch"
+                      gap={2}
+                      maxH="320px"
+                      overflowY="auto"
+                      pr={1}
+                      sx={{
+                        '&::-webkit-scrollbar': { width: '4px' },
+                        '&::-webkit-scrollbar-track': { background: 'transparent' },
+                        '&::-webkit-scrollbar-thumb': {
+                          background: 'rgba(204,255,0,0.25)',
+                          borderRadius: '4px',
+                        },
+                        '&::-webkit-scrollbar-thumb:hover': {
+                          background: 'rgba(204,255,0,0.5)',
+                        },
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'rgba(204,255,0,0.25) transparent',
+                      }}
+                    >
+                      {tasks.map((task: any) => {
+                        const isCompleted = user?.completedTasks?.some(
+                          (ct: any) =>
+                            (ct._id || ct).toString() === (task._id || '').toString() || ct.taskId === task.taskId
+                        );
+                        const isReferral = task.type === 'referral';
+                        const isVerifying = verifyingTasks[task.taskId];
+                        const isDisabled = isCompleted && !isReferral;
+
+                        return (
+                          <Flex key={task.taskId} justify="space-between" align="center" p={2.5} bg="blackAlpha.400" borderRadius="lg">
+                            <Text fontSize="sm" color="whiteAlpha.900" fontWeight="medium">{task.description}</Text>
+                            <Button
+                              size="sm"
+                              bgGradient={!isDisabled ? 'linear(to-r, #CCFF00, green.600)' : undefined}
+                              bg={isDisabled ? 'whiteAlpha.200' : undefined}
+                              color={isDisabled ? 'whiteAlpha.500' : 'white'}
+                              fontWeight="bold"
+                              rounded="md"
+                              h={7}
+                              fontSize="xs"
+                              flexShrink={0}
+                              ml={2}
+                              isLoading={!!isVerifying}
+                              isDisabled={isDisabled}
+                              onClick={() => handleTaskClick(task)}
+                              _hover={!isDisabled ? { bgGradient: 'linear(to-r, #CCFF00, #99CC00)' } : {}}
+                            >
+                              {isCompleted && !isReferral ? 'Done' : (isCompleted && isReferral ? 'Share' : `+${task.rewardAmount}`)}
+                            </Button>
+                          </Flex>
+                        );
+                      })}
+                    </VStack>
+                    {/* Fade gradient signals more content below */}
+                    {tasks.length > 4 && (
+                      <Box
+                        position="absolute"
+                        bottom={0}
+                        left={0}
+                        right={0}
+                        h="40px"
+                        bgGradient="linear(to-t, gray.900, transparent)"
+                        pointerEvents="none"
+                        borderBottomRadius="lg"
+                      />
+                    )}
+                  </Box>
                 </Box>
               </Box>
 
@@ -925,30 +998,99 @@ export default function Dashboard() {
               </Box>
             </Flex>
 
-            {/* --- Play CTA with signature BLNK Cyan->Purple->Pink Gradient --- */}
-            <Button
-              h={{ base: '60px', md: '70px' }}
-              w="full"
-              fontSize={{ base: 'xl', md: '2xl' }}
-              fontWeight="black"
-              letterSpacing="widest"
-              bgGradient="linear(to-r, #CCFF00, green.600, green.800)"
-              color="white"
-              rounded="2xl"
-              boxShadow="0 0 35px rgba(72, 187, 120, 0.45)"
-              _hover={{
-                bgGradient: 'linear(to-r, #CCFF00, #99CC00, green.700)',
-                transform: 'translateY(-3px)',
-                boxShadow: '0 16px 36px rgba(236, 72, 153, 0.5)',
-              }}
-              transition="all 0.3s ease"
-              onClick={() => {
-                soundManager.playClick();
-                router.push('/game');
-              }}
-            >
-              PLAY CLAW MACHINE
-            </Button>
+            {/* --- Game Window Banner + Play CTA --- */}
+            {gameWindow?.isOpen ? (
+              <Box w="full">
+                {/* LIVE badge with time remaining */}
+                <Flex
+                  align="center"
+                  justify="center"
+                  gap={2}
+                  mb={2}
+                  px={4}
+                  py={2}
+                  bg="rgba(204,255,0,0.08)"
+                  border="1px solid"
+                  borderColor="rgba(204,255,0,0.3)"
+                  rounded="xl"
+                >
+                  <Box w={2} h={2} rounded="full" bg="#CCFF00" boxShadow="0 0 8px #CCFF00" animation="pulse 1.5s infinite" />
+                  <Text fontSize="xs" fontWeight="bold" color="#CCFF00" letterSpacing="widest" textTransform="uppercase">
+                    GAME LIVE
+                  </Text>
+                </Flex>
+                <Button
+                  h={{ base: '60px', md: '70px' }}
+                  w="full"
+                  fontSize={{ base: 'xl', md: '2xl' }}
+                  fontWeight="black"
+                  letterSpacing="widest"
+                  bgGradient="linear(to-r, #CCFF00, green.600, green.800)"
+                  color="white"
+                  rounded="2xl"
+                  boxShadow="0 0 35px rgba(72, 187, 120, 0.45)"
+                  _hover={{
+                    bgGradient: 'linear(to-r, #CCFF00, #99CC00, green.700)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 16px 36px rgba(72, 187, 120, 0.5)',
+                  }}
+                  transition="all 0.3s ease"
+                  onClick={() => { soundManager.playClick(); router.push('/game'); }}
+                >
+                  PLAY CLAW MACHINE
+                </Button>
+              </Box>
+            ) : (
+              <Box w="full">
+                <Box
+                  w="full"
+                  p={{ base: 4, md: 5 }}
+                  bg="blackAlpha.500"
+                  border="1px solid"
+                  borderColor="whiteAlpha.200"
+                  rounded="2xl"
+                  textAlign="center"
+                  display="flex"
+                  flexDirection="column"
+                  alignItems="center"
+                  gap={3}
+                >
+                  <Text fontSize="xs" color="whiteAlpha.500" fontWeight="bold" letterSpacing="widest" textTransform="uppercase">
+                    GAME CAN BE ACTIVE ANYTIME
+                  </Text>
+                  
+                  <Text
+                    fontSize={{ base: 'xl', md: '2xl' }}
+                    fontWeight="black"
+                    letterSpacing="wider"
+                    bgGradient="linear(to-r, #CCFF00, green.500)"
+                    bgClip="text"
+                    textTransform="uppercase"
+                  >
+                    Stick to the screens
+                  </Text>
+                  
+                  <Button
+                    mt={1}
+                    size="sm"
+                    bg="#1DA1F2"
+                    color="white"
+                    fontWeight="bold"
+                    rounded="lg"
+                    px={6}
+                    _hover={{ bg: '#1a91da' }}
+                    leftIcon={
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                      </svg>
+                    }
+                    onClick={() => window.open('https://twitter.com/BlnkINC', '_blank')}
+                  >
+                    TURN ON X NOTIFICATIONS
+                  </Button>
+                </Box>
+              </Box>
+            )}
           </VStack>
         )}
       </VStack>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Box, Modal, ModalContent, ModalOverlay, Text, useToast } from '@chakra-ui/react';
+import { Box, Modal, ModalContent, ModalOverlay, Text, useToast, ModalCloseButton, ModalBody, VStack, Heading } from '@chakra-ui/react';
 import { Canvas, useThree } from '@react-three/fiber';
 import ButtonsControl from '@/components/ButtonsControl';
 import JoystickControl from '@/components/JoystickControl';
@@ -174,6 +174,9 @@ export default function GamePage() {
     const [user, setUser] = useState<any>(null);
     const [coinArcVisible, setCoinArcVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
+    // Game window state — controls whether PLAY is accessible
+    const [gameWindowOpen, setGameWindowOpen] = useState<boolean | null>(null); // null = loading
+    const [lockedModalDismissed, setLockedModalDismissed] = useState(false);
 
     const ref = useRef<any>(null);
     const toast = useToast();
@@ -181,19 +184,36 @@ export default function GamePage() {
     const { disconnect } = useDisconnect();
     const pendingOutcomeRef = useRef<string | null>(null);
 
+    // --- Fetch game window state ----------------------------------------
+    const fetchWindow = useCallback(async () => {
+        try {
+            const res = await fetch('/api/game/window');
+            if (!res.ok) return;
+            const data = await res.json();
+            setGameWindowOpen(data.isOpen);
+        } catch { /* degrade gracefully */ }
+    }, []);
+
     useEffect(() => {
         setMounted(true);
-        fetch('/api/auth/me')
-            .then(res => {
+        // Parallel fetches — user auth + window state
+        Promise.all([
+            fetch('/api/auth/me').then(res => {
                 if (res.ok) return res.json().then(d => setUser(d.user));
                 toast({ title: 'Please connect wallet', status: 'warning', position: 'top' });
                 router.push('/');
-            })
-            .catch(() => {
+            }).catch(() => {
                 toast({ title: 'Network error', status: 'error', position: 'top' });
                 router.push('/');
-            });
-    }, [router, toast]);
+            }),
+            fetchWindow(),
+        ]);
+    }, [router, toast, fetchWindow]);
+
+    useEffect(() => {
+        const id = setInterval(fetchWindow, 60_000);
+        return () => clearInterval(id);
+    }, [fetchWindow]);
 
     useEffect(() => {
         if (!mounted) return;
@@ -214,6 +234,11 @@ export default function GamePage() {
     ----------------------------------------------------------------------- */
     const handlePlay = useCallback(async () => {
         if (phase !== 'intro' || !user) return;
+        // Double-check window is still open before spending coins
+        if (!gameWindowOpen) {
+            toast({ title: 'Game window is closed', description: 'Earn coins and wait for the next window.', status: 'warning', position: 'top' });
+            return;
+        }
         if ((user?.coins ?? 0) < 3) {
             router.push('/dashboard');
             return;
@@ -228,7 +253,13 @@ export default function GamePage() {
             const data = await res.json();
 
             if (!res.ok) {
-                toast({ title: data.message || 'Error', status: 'error', position: 'top' });
+                // If window closed between the UI check and the API call
+                if (data.windowClosed) {
+                    setGameWindowOpen(false);
+                    toast({ title: 'Game window closed', description: 'The game window ended before your play was processed.', status: 'warning', position: 'top' });
+                } else {
+                    toast({ title: data.message || 'Error', status: 'error', position: 'top' });
+                }
                 setPhase('intro');
                 setCoinArcVisible(false);
                 return;
@@ -248,7 +279,7 @@ export default function GamePage() {
             setPhase('intro');
             setCoinArcVisible(false);
         }
-    }, [phase, user, toast]);
+    }, [phase, user, gameWindowOpen, toast]);
 
     /* -- DROP handler — starts claw animation, then reveals outcome --------- */
     const handleDrop = useCallback(() => {
@@ -407,7 +438,7 @@ export default function GamePage() {
                 <div className="hud-container">
                     {/* Monochrome Game Vibe Dashboard Home button */}
                     <button
-                        onClick={() => router.push('/')}
+                        onClick={() => router.push('/dashboard')}
                         className="hud-btn-dashboard"
                         onMouseEnter={e => {
                             e.currentTarget.style.borderColor = '#edc75b';
@@ -465,7 +496,7 @@ export default function GamePage() {
                     </div>
                 </div>
 
-                {/* -- INTRO phase: big PLAY GAME button ------------------- */}
+                {/* -- INTRO phase: PLAY button or Window Locked state ---------- */}
                 {phase === 'intro' && !isLoading && (
                     <div style={{
                         position: 'absolute',
@@ -479,69 +510,121 @@ export default function GamePage() {
                         pointerEvents: 'none',
                         animation: 'fadeUp 0.6s ease both',
                     }}>
-                        <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                            <button
-                                onClick={handlePlay}
-                                style={{
-                                    padding: '0',
-                                    width: '230px',
-                                    height: '60px',
-                                    borderRadius: '9999px',
-                                    border: '1px solid rgba(237, 199, 91, 0.45)',
-                                    background: 'linear-gradient(135deg, rgba(20, 20, 25, 0.95) 0%, rgba(10, 10, 12, 0.95) 100%)',
-                                    color: '#ffffff',
-                                    fontSize: '12px',
-                                    
-                                    fontWeight: "bold", fontFamily: "var(--font-inter), sans-serif",
-                                    letterSpacing: '0.25em',
-                                    cursor: 'pointer',
-                                    textTransform: 'uppercase',
-                                    backdropFilter: 'blur(16px)',
-                                    boxShadow: '0 0 30px rgba(237, 199, 91, 0.25), 0 10px 25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2)',
-                                    transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                                    animation: 'pulseRing 2.4s ease-in-out infinite',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '10px',
-                                }}
-                                onMouseEnter={e => {
-                                    e.currentTarget.style.borderColor = '#edc75b';
-                                    e.currentTarget.style.color = '#edc75b';
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 0 35px rgba(237, 199, 91, 0.45), 0 12px 30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.3)';
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.borderColor = 'rgba(237, 199, 91, 0.45)';
-                                    e.currentTarget.style.color = '#ffffff';
-                                    e.currentTarget.style.transform = 'translateY(0px)';
-                                    e.currentTarget.style.boxShadow = '0 0 30px rgba(237, 199, 91, 0.25), 0 10px 25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2)';
-                                }}
-                                onMouseDown={e => {
-                                    e.currentTarget.style.transform = 'translateY(2px)';
-                                }}
-                                onMouseUp={e => {
-                                    e.currentTarget.style.transform = 'translateY(0px)';
-                                }}
-                            >
-                                {(user?.coins ?? 0) < 3 ? '▶ GET MORE COINS' : '▶ PLAY GAME'}
-                            </button>
-                            <div style={{
-                                background: 'rgba(10, 10, 14, 0.85)',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                borderRadius: '9999px',
-                                padding: '6px 16px',
-                                backdropFilter: 'blur(10px)',
-                                fontSize: '9px',
-                                fontWeight: "bold", fontFamily: "var(--font-inter), sans-serif",
-                                color: '#edc75b',
-                                letterSpacing: '0.2em',
-                                textShadow: '0 0 10px rgba(237, 199, 91, 0.4)',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
-                            }}>
-                                COSTS 3 COINS
+                        {/* Game window loading state */}
+                        {gameWindowOpen === null && (
+                            <div style={{ pointerEvents: 'auto', textAlign: 'center' }}>
+                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.2em' }}>CHECKING GAME STATUS…</span>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Window CLOSED locked state */}
+                        {gameWindowOpen === false && (
+                            <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '280px' }}>
+                                <div style={{
+                                    background: 'rgba(10, 10, 14, 0.92)',
+                                    border: '1px solid rgba(255,255,255,0.12)',
+                                    borderRadius: '20px',
+                                    padding: '28px 28px',
+                                    textAlign: 'center',
+                                    backdropFilter: 'blur(16px)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    <div style={{ fontSize: '11px', fontWeight: 'bold', fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '0.25em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                                        GAME WINDOW CLOSED
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => router.push('/dashboard')}
+                                    style={{
+                                        padding: '12px 24px',
+                                        borderRadius: '9999px',
+                                        border: '1px solid rgba(237,199,91,0.35)',
+                                        background: 'rgba(10,10,14,0.9)',
+                                        color: '#edc75b',
+                                        fontSize: '10px',
+                                        fontWeight: 'bold',
+                                        fontFamily: 'var(--font-inter), sans-serif',
+                                        letterSpacing: '0.2em',
+                                        cursor: 'pointer',
+                                        textTransform: 'uppercase',
+                                    }}
+                                >
+                                    ← EARN MORE COINS
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Window OPEN — normal play button */}
+                        {gameWindowOpen === true && (
+                            <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+
+                                <button
+                                    onClick={handlePlay}
+                                    style={{
+                                        padding: '0',
+                                        width: '230px',
+                                        height: '60px',
+                                        borderRadius: '9999px',
+                                        border: '1px solid rgba(237, 199, 91, 0.45)',
+                                        background: 'linear-gradient(135deg, rgba(20, 20, 25, 0.95) 0%, rgba(10, 10, 12, 0.95) 100%)',
+                                        color: '#ffffff',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold',
+                                        fontFamily: 'var(--font-inter), sans-serif',
+                                        letterSpacing: '0.25em',
+                                        cursor: 'pointer',
+                                        textTransform: 'uppercase',
+                                        backdropFilter: 'blur(16px)',
+                                        boxShadow: '0 0 30px rgba(237, 199, 91, 0.25), 0 10px 25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2)',
+                                        transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                        animation: 'pulseRing 2.4s ease-in-out infinite',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '10px',
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.borderColor = '#edc75b';
+                                        e.currentTarget.style.color = '#edc75b';
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 0 35px rgba(237, 199, 91, 0.45), 0 12px 30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.3)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.borderColor = 'rgba(237, 199, 91, 0.45)';
+                                        e.currentTarget.style.color = '#ffffff';
+                                        e.currentTarget.style.transform = 'translateY(0px)';
+                                        e.currentTarget.style.boxShadow = '0 0 30px rgba(237, 199, 91, 0.25), 0 10px 25px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2)';
+                                    }}
+                                    onMouseDown={e => { e.currentTarget.style.transform = 'translateY(2px)'; }}
+                                    onMouseUp={e => { e.currentTarget.style.transform = 'translateY(0px)'; }}
+                                >
+                                    {(user?.coins ?? 0) < 3 ? '▶ GET MORE COINS' : '▶ PLAY GAME'}
+                                </button>
+                                <div style={{
+                                    background: 'rgba(10, 10, 14, 0.85)',
+                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                    borderRadius: '9999px',
+                                    padding: '6px 16px',
+                                    backdropFilter: 'blur(10px)',
+                                    fontSize: '9px',
+                                    fontWeight: 'bold',
+                                    fontFamily: 'var(--font-inter), sans-serif',
+                                    color: '#edc75b',
+                                    letterSpacing: '0.2em',
+                                    textShadow: '0 0 10px rgba(237, 199, 91, 0.4)',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+                                }}>
+                                    COSTS 3 COINS
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -915,6 +998,96 @@ export default function GamePage() {
                     }
                 }
             ` }} />
+            {/* --- Game Locked FOMO Modal --- */}
+            <Modal
+                isOpen={gameWindowOpen === false && !lockedModalDismissed}
+                onClose={() => setLockedModalDismissed(true)}
+                size="md"
+                isCentered
+            >
+                <ModalOverlay backdropFilter="blur(10px)" bg="blackAlpha.800" />
+                <ModalContent
+                    bg="gray.900"
+                    border="1px solid"
+                    borderColor="#CCFF00"
+                    borderRadius="2xl"
+                    p={4}
+                    boxShadow="0 0 30px rgba(204, 255, 0, 0.2)"
+                >
+                    <ModalCloseButton color="gray.400" />
+                    <ModalBody pb={6}>
+                        <VStack gap={5} align="center" pt={4} textAlign="center">
+                            <Heading
+                                size="md"
+                                color="white"
+                                fontWeight="black"
+                                letterSpacing="widest"
+                                textTransform="uppercase"
+                                bgGradient="linear(to-r, #CCFF00, green.400)"
+                                bgClip="text"
+                            >
+                                GAME CAN BE ACTIVE ANYTIME
+                            </Heading>
+                            <Text color="whiteAlpha.800" fontSize="sm" lineHeight="tall">
+                                The arcade is closed, but it won't be for long. The next window is dropping unexpectedly. Stick to the screens.
+                            </Text>
+                            
+                            <VStack w="full" gap={3} mt={2}>
+                                <button
+                                    onClick={() => window.open('https://twitter.com/BlnkINC', '_blank')}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        background: '#1DA1F2',
+                                        border: 'none',
+                                        color: '#fff',
+                                        fontWeight: 'bold',
+                                        fontFamily: 'var(--font-inter), sans-serif',
+                                        cursor: 'pointer',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.1em',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        transition: 'all 0.2s',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#1a91da'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#1DA1F2'; }}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                                    </svg>
+                                    TURN ON X NOTIFICATIONS
+                                </button>
+                                
+                                <button
+                                    onClick={() => router.push('/dashboard')}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        background: 'transparent',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        color: 'rgba(255,255,255,0.8)',
+                                        fontWeight: 'bold',
+                                        fontFamily: 'var(--font-inter), sans-serif',
+                                        cursor: 'pointer',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.1em',
+                                        transition: 'all 0.2s',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                    COMPLETE TASKS
+                                </button>
+                            </VStack>
+                        </VStack>
+                    </ModalBody>
+                </ModalContent>
+            </Modal>
         </>
     );
 }

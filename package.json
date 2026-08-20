@@ -3,18 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm run marketplace:build && next dev",
+    "dev": "next dev",
     "dev:webpack": "next dev --webpack",
     "dev:lowmem": "NODE_OPTIONS='--max-old-space-size=4096' next dev",
-    "build": "npm run marketplace:build && next build",
+    "build": "next build",
     "start": "next start",
     "serve": "next build && next start",
     "prod": "next build && next start",
     "clean": "rm -rf .next",
     "lint": "eslint",
-    "marketplace:install": "npm --prefix marketplace-app install --no-audit --no-fund",
-    "marketplace:build": "npm run marketplace:install && npm --prefix marketplace-app run build",
-    "marketplace:dev": "npm --prefix marketplace-app run dev",
+
     "db:migrate": "node scripts/migrate.mjs",
     "test": "node --test test/"
   },

@@ -49,17 +49,26 @@ const customTheme = {
   },
 };
 
+import { usePathname } from 'next/navigation';
+
 export function Providers({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isMarketplace = pathname?.startsWith('/marketplace');
+
+  const content = isMarketplace ? children : (
+    <RainbowKitProvider theme={customTheme as any} locale="en-US">
+      <CacheProvider>
+        <ChakraProvider>
+          {children}
+        </ChakraProvider>
+      </CacheProvider>
+    </RainbowKitProvider>
+  );
+
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={customTheme as any} locale="en-US">
-          <CacheProvider>
-            <ChakraProvider>
-              {children}
-            </ChakraProvider>
-          </CacheProvider>
-        </RainbowKitProvider>
+        {content}
       </QueryClientProvider>
     </WagmiProvider>
   );

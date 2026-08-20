@@ -13,10 +13,11 @@ export default function Spotlight() {
   // The 3D scene in /game already has its own grayscale logic and might look weird 
   // with a 2D DOM mask cutting through the canvas.
   // We disable the 2D spotlight mask on the /game page so it doesn't interfere.
-  const isGamePage = pathname === '/game';
+  // We also disable it on the /marketplace route because it has its own standalone design.
+  const isDisabledRoute = pathname === '/game' || pathname?.startsWith('/marketplace');
 
   useEffect(() => {
-    if (!mounted || isGamePage) return;
+    if (!mounted || isDisabledRoute) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       if (overlayRef.current) {
@@ -30,9 +31,9 @@ export default function Spotlight() {
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [mounted, isGamePage]);
+  }, [mounted, isDisabledRoute]);
 
-  if (!mounted || isGamePage) return null;
+  if (!mounted || isDisabledRoute) return null;
 
   return (
     <Box

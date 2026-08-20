@@ -1,17 +1,22 @@
 {
-  "name": "blnk-flywheel",
+  "name": "blnk",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm run marketplace:build && next dev",
     "dev:webpack": "next dev --webpack",
     "dev:lowmem": "NODE_OPTIONS='--max-old-space-size=4096' next dev",
-    "build": "next build",
+    "build": "npm run marketplace:build && next build",
     "start": "next start",
     "serve": "next build && next start",
     "prod": "next build && next start",
     "clean": "rm -rf .next",
-    "lint": "eslint"
+    "lint": "eslint",
+    "marketplace:install": "npm --prefix marketplace-app install --no-audit --no-fund",
+    "marketplace:build": "npm run marketplace:install && npm --prefix marketplace-app run build",
+    "marketplace:dev": "npm --prefix marketplace-app run dev",
+    "db:migrate": "node scripts/migrate.mjs",
+    "test": "node --test test/"
   },
   "dependencies": {
     "@chakra-ui/next-js": "^2.4.2",
@@ -32,8 +37,10 @@
     "@x402/svm": "^2.20.0",
     "framer-motion": "^12.42.2",
     "iron-session": "^8.0.4",
+    "lucide-react": "^1.33.0",
     "mongoose": "^8.24.2",
     "next": "16.2.12",
+    "pg": "^8.23.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "siwe": "^3.0.0",
@@ -44,6 +51,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.185.1",

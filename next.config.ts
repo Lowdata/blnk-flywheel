@@ -20,6 +20,14 @@ const nextConfig: NextConfig = {
         // Silence the "multiple lockfiles" workspace-root inference warning
         root: __dirname,
     },
+    async rewrites() {
+        return [
+            // The Holder Hub is a separate Vite build living in
+            // public/marketplace/. Next serves public/ files at their literal
+            // path, so /marketplace itself needs pointing at the entry point.
+            { source: '/marketplace', destination: '/marketplace/index.html' },
+        ];
+    },
     async headers() {
         return [
             {

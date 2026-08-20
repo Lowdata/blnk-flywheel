@@ -9,6 +9,7 @@ import {
 } from '@rainbow-me/rainbowkit/wallets';
 import { createConfig, http } from 'wagmi';
 import { mainnet, sepolia, polygon, base } from 'wagmi/chains';
+import { robinhood, RPC_URL } from '@/marketplace/chain/robinhood';
 import { QueryClient } from '@tanstack/react-query';
 
 const WALLETCONNECT_PROJECT_ID =
@@ -35,9 +36,10 @@ const connectors = connectorsForWallets(
 );
 
 export const wagmiConfig = createConfig({
-  chains: [mainnet, sepolia, polygon, base],
+  chains: [robinhood, mainnet, sepolia, polygon, base],
   connectors,
   transports: {
+    [robinhood.id]: http(RPC_URL),
     [mainnet.id]: http(),
     [sepolia.id]: http(),
     [polygon.id]: http(),

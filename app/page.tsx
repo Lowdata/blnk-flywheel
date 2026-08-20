@@ -81,8 +81,8 @@ export default function Home() {
     </div>
 
     {/* CTA */}
-    <Link className="dash-nav__cta" href="/dashboard">
-      Play the Game →
+    <Link className="dash-nav__cta" href="/marketplace">
+      GO TO MARKETPLACE →
     </Link>
   </div>
 </nav>
@@ -98,8 +98,8 @@ export default function Home() {
     <a className="hero-badge" href="https://x.com/RobinhoodCrypto" target="_blank" rel="noopener">
       <span className="dot"></span> Building on Robinhood
     </a>
-    <Link className="wl-badge" href="/dashboard">
-      Ride to the Colour Machine &rarr;
+    <Link className="wl-badge" href="/marketplace">
+      GO TO MARKETPLACE &rarr;
     </Link>
   </div>
 

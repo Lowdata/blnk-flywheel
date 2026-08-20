@@ -90,7 +90,7 @@
     letter-spacing:.05em;
   }
 
-  /* Play the Game CTA */
+  /* Marketplace CTA */
   .dash-nav__cta{
     display:inline-flex; align-items:center; gap:6px;
     font-family:var(--font-display); font-weight:700; font-size:13px;

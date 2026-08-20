@@ -14,15 +14,15 @@ export type DevState = "disconnected" | "loading" | "empty" | "error" | "wrongne
 
 const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
 
-export const devState: DevState = import.meta.env.DEV
+export const devState: DevState = process.env.NODE_ENV === 'development'
   ? ((params?.get("state") as DevState) ?? null)
   : null;
 
-export const devMockCount: number | undefined = import.meta.env.DEV
+export const devMockCount: number | undefined = process.env.NODE_ENV === 'development'
   ? Number(params?.get("mock")) || undefined
   : undefined;
 
-const rawWallet = import.meta.env.DEV ? (params?.get("wallet") ?? "") : "";
+const rawWallet = process.env.NODE_ENV === 'development' ? (params?.get("wallet") ?? "") : "";
 
 export const devViewWallet: `0x${string}` | undefined = /^0x[a-fA-F0-9]{40}$/.test(rawWallet)
   ? (rawWallet as `0x${string}`)

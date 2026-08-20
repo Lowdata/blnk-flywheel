@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.local
+.DS_Store
+*.log
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Neon CLI workspace link (contains project/branch ids)
+.neon

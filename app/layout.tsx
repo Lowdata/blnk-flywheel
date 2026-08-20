@@ -1,5 +1,4 @@
 import { Providers } from './providers';
-import Spotlight from '@/components/Spotlight';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Press_Start_2P, VT323, Silkscreen, Inter, Montserrat } from 'next/font/google';
@@ -59,7 +58,6 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning>
         <Providers>
-          <Spotlight />
           {children}
         </Providers>
         {process.env.VERCEL === '1' && <Analytics />}

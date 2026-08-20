@@ -1,7 +1,5 @@
 'use client';
 
-import { ChakraProvider } from '@chakra-ui/react';
-import { CacheProvider } from '@chakra-ui/next-js';
 import React from 'react';
 import { WagmiProvider } from 'wagmi';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -49,26 +47,16 @@ const customTheme = {
   },
 };
 
-import { usePathname } from 'next/navigation';
-
 export function Providers({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isMarketplace = pathname?.startsWith('/marketplace');
-
-  const content = isMarketplace ? children : (
-    <RainbowKitProvider theme={customTheme as any} locale="en-US">
-      <CacheProvider>
-        <ChakraProvider>
-          {children}
-        </ChakraProvider>
-      </CacheProvider>
-    </RainbowKitProvider>
-  );
-
+  // Only provide global Wagmi and RainbowKit contexts here.
+  // The Marketplace has its own RainbowKit theme wrapped inside app/marketplace/layout.tsx.
+  // We leave the global one here for the rest of the app.
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        {content}
+        <RainbowKitProvider theme={customTheme as any} locale="en-US">
+          {children}
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

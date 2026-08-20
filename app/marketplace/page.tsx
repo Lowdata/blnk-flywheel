@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   KeyRound,
@@ -149,7 +150,9 @@ export default function MarketplacePage() {
       >
         <div className="max-w-[1600px] mx-auto px-5 h-14 flex items-center justify-between gap-4">
           <div className="flex items-baseline gap-3">
-            <Wordmark />
+            <Link href="/">
+              <Wordmark />
+            </Link>
             <span className="hidden md:inline text-[11px]" style={{ color: PALETTE.grey1 }}>
               Holder Hub
             </span>

@@ -1,7 +1,6 @@
 'use client';
 import { useEffect } from 'react';
 import './home.css';
-import Link from 'next/link';
 
 export default function Home() {
   useEffect(() => {
@@ -81,9 +80,9 @@ export default function Home() {
     </div>
 
     {/* CTA */}
-    <Link className="dash-nav__cta" href="/dashboard">
-      Play the Game →
-    </Link>
+    <a className="dash-nav__cta" href="https://blnkinc.xyz/marketplace">
+      GO TO MARKETPLACE →
+    </a>
   </div>
 </nav>
 
@@ -98,9 +97,9 @@ export default function Home() {
     <a className="hero-badge" href="https://x.com/RobinhoodCrypto" target="_blank" rel="noopener">
       <span className="dot"></span> Building on Robinhood
     </a>
-    <Link className="wl-badge" href="/dashboard">
-      Ride to the Colour Machine &rarr;
-    </Link>
+    <a className="wl-badge" href="https://blnkinc.xyz/marketplace">
+      GO TO MARKETPLACE &rarr;
+    </a>
   </div>
 
   <div className="scroll-cue"><span>SCROLL</span><span className="bar"></span></div>

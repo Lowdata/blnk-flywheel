@@ -32,8 +32,10 @@
     "@x402/svm": "^2.20.0",
     "framer-motion": "^12.42.2",
     "iron-session": "^8.0.4",
+    "lucide-react": "^1.33.0",
     "mongoose": "^8.24.2",
     "next": "16.2.12",
+    "pg": "^8.23.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "siwe": "^3.0.0",
@@ -44,6 +46,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.185.1",

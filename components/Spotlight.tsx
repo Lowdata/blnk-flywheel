@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Box } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import { useMounted } from '@/hooks/useMounted';
 
@@ -36,12 +35,9 @@ export default function Spotlight() {
   if (!mounted || isDisabledRoute) return null;
 
   return (
-    <Box
+    <div
       ref={overlayRef}
-      position="fixed"
-      inset={0}
-      pointerEvents="none"
-      zIndex={40}
+      className="fixed inset-0 pointer-events-none z-40"
       style={{
         backdropFilter: 'grayscale(1) brightness(0.62) contrast(1.08)',
         WebkitBackdropFilter: 'grayscale(1) brightness(0.62) contrast(1.08)',
